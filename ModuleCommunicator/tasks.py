@@ -17,7 +17,6 @@ def communicator(url, image_path, cc_th, severity_th):
     cls_image.close()
     end = time.time()
     print("====== classification fin {} ======".format(end-start))
-
     start = time.time()
     seg_data = dict()
     seg_file = json.dumps(cls_result_data, ensure_ascii=False, indent='')
@@ -27,40 +26,57 @@ def communicator(url, image_path, cc_th, severity_th):
     print("====== segmentation fin {} ======".format(end-start))
 
     seg_result_data = json.loads((seg_response.content).decode('utf-8'))
-    seg_image = seg_result_data['result'][0]['label'][0]['description']
+    seg_image = seg_result_data['result']
 
     start = time.time()
     cls_detail_data = dict()
     cls_detail_data['image'] = seg_image
-    cls_detail_response = requests.post(url='http://mltwins.sogang.ac.kr:8003', data=cls_detail_data)
+    cls_detail_response = requests.post(url='http://mltwins.sogang.ac.kr:8003', data=cls_detail_data, files=seg_files)
     cls_detail_result_data = json.loads((cls_detail_response.content).decode('utf-8'))
     end = time.time()
     print("====== classification detail fin {} ======".format(end-start))
 
     start = time.time()
-    region_result = make_region(cls_result_data)
+    region_results = make_region(cls_result_data)
     end = time.time()
     print("====== region fin {} ======".format(end - start))
 
-    for i in range(len(cls_result_data['result'])) :
-        cls_position = cls_result_data['result'][i]['position']
-        for j in range(len(cls_detail_result_data['result'])) :
-            cls_detail_position = cls_detail_result_data['result'][j]['position']
+    cls_result_data = cls_result_data['results'][0]['module_result']
+
+    detail = [
+        {'description': 'ac', 'score': 0},
+        {'description': 'lc', 'score': 0},
+        {'description': 'detail_norm', 'score': 0},
+        {'description': 'tc', 'score': 0}
+    ]
+
+    for region_result in region_results:
+        region_type = region_result['region_type']
+        if region_type == 'patch' :
+            region_result['region_area'][0]['label'].extend(detail)
+
+    for i in range(len(cls_result_data)) :
+        cls_position = cls_result_data[i]['position']
+        cls_detail_result = cls_detail_result_data['results'][0]['module_result']
+        for j in range(len(cls_detail_result)) :
+            cls_detail_position = cls_detail_result[j]['position']
             if cls_position['x'] == cls_detail_position['x'] and cls_position['y'] == cls_detail_position['y'] :
-                cls_result_data['result'][i]['label'].extend(cls_detail_result_data['result'][j]['label'])
-                j = len(cls_detail_result_data['result'])
+                cls_result_data[i]['label'].extend(cls_detail_result[j]['label'])
+                j = len(cls_detail_result)
+
+
 
     result = {}
-    result['classification_result'] = cls_result_data['result']
+    # result['classification_result'] = cls_result_data['result']
     result['seg_image'] = seg_image
-    result['region_result'] = region_result
+    result['region_result'] = region_results
     return result
 
 
 def make_region(cls_result_data):
     CLASS_LIST = ['normal', 'crack', 'patch', 'lane', 'detail_norm', 'ac', 'tc', 'lc']
     CLASS_NUM = len(CLASS_LIST)
-    image_infos = cls_result_data['result']
+    image_infos = cls_result_data['results'][0]['module_result']
 
     # image info
     # TODO: not to use static size
@@ -71,6 +87,7 @@ def make_region(cls_result_data):
     axis_x = int(image_width / patch_size)
     axis_y = int(image_height / patch_size)
     crack_map = [[0 for x in range(axis_x)] for y in range(axis_y)]
+    patch_label = [[0 for x in range(axis_x)] for y in range(axis_y)]
 
     # Scan all result data
     for image_info in image_infos:
@@ -102,6 +119,8 @@ def make_region(cls_result_data):
                 crack_map[y][x] = 6
             elif crack_classification_max == 'lc':
                 crack_map[y][x] = 7
+
+        patch_label[y][x] = label
 
     check_pos_list = [-1, 0, 1]
     num_of_different_region = [0 for x in range(CLASS_NUM)]
@@ -158,8 +177,11 @@ def make_region(cls_result_data):
                         if result[i]['region'] == curernt_value:
                             is_json_region_not_exist = False
                             result[i]['region_area'].append({
-                                'h': patch_size, 'w': patch_size,
-                                'x': current_x * patch_size, 'y': current_y * patch_size
+                                'label': patch_label[current_y][current_x],
+                                'h': patch_size,
+                                'w': patch_size,
+                                'x': current_x * patch_size,
+                                'y': current_y * patch_size
                             })
 
                 if len(result) == 0 or is_json_region_not_exist:
@@ -167,11 +189,46 @@ def make_region(cls_result_data):
                         'region': curernt_value,
                         'region_type': CLASS_LIST[int(curernt_value / 100)],
                         'region_area': [{
-                            'h': patch_size, 'w': patch_size,
-                            'x': current_x * patch_size, 'y': current_y * patch_size
+                            'label': patch_label[current_y][current_x],
+                            'h': patch_size,
+                            'w': patch_size,
+                            'x': current_x * patch_size,
+                            'y': current_y * patch_size
                         }]
                     })
     for i in range(0, len(result)):
         result[i]['region'] = i
+
+
+    for i in range(0, len(result)):
+        if result[i]['region_type'] == 'ac':
+            distress_width = 10
+            distress_height = "null"
+            distress_area = 14
+            distress_serverity = "medium"
+        elif result[i]['region_type'] == 'lc':
+            distress_width = 2
+            distress_height = 14
+            distress_area = "null"
+            distress_serverity = "low"
+        elif result[i]['region_type'] == 'tc':
+            distress_width = 10
+            distress_height = 23
+            distress_area = "null"
+            distress_serverity = "high"
+        elif result[i]['region_type'] == 'patch':
+            distress_width = "null"
+            distress_height = "null"
+            distress_area = 23
+            distress_serverity = "null"
+        else:
+            distress_width = "null"
+            distress_height = "null"
+            distress_area = "null"
+            distress_serverity = "null"
+        result[i]['distress_width'] = distress_width
+        result[i]['distress_height'] = distress_height
+        result[i]['distress_area'] = distress_area
+        result[i]['distress_serverity'] = distress_serverity
 
     return result
