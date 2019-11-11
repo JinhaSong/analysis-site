@@ -7,7 +7,7 @@ import ast
 import time
 
 @app.task
-def communicator(url, image_path):
+def communicator(url, image_path, cc_th, severity_th):
     start = time.time()
     cls_data = dict()
     cls_image = open(image_path, 'rb')

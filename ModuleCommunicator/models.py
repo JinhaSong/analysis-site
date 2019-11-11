@@ -18,6 +18,8 @@ class ImageModel(models.Model):
     uploaded_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
     modules = models.TextField(blank=True)
+    connected_component_threshold = models.IntegerField(default=1)
+    severity_threshold = models.IntegerField(default=1)
 
     def save(self, *args, **kwargs):
         super(ImageModel, self).save(*args, **kwargs)
@@ -59,6 +61,7 @@ class ResultModel(models.Model):
     module = models.ForeignKey(ModuleElementModel)
     module_result = JSONField(null=True)
 
+
     def save(self, *args, **kwargs):
         super(ResultModel, self).save(*args, **kwargs)
         self.set_task()
@@ -69,9 +72,19 @@ class ResultModel(models.Model):
         self.task = None
         try:
             if DEBUG:
-                self.task = communicator(url=self.module.url, image_path=self.image.image.path)
+                self.task = communicator(
+                    self.module.url,
+                    self.image.image.path,
+                    self.image.connected_component_threshold,
+                    self.image.severity_threshold
+                )
             else:
-                self.task = communicator.delay(url=self.module.url, image_path=self.image.image.path)
+                self.task = communicator.delay(
+                    self.module.url,
+                    self.image.image.path,
+                    self.image.connected_component_threshold,
+                    self.image.severity_threshold
+                )
         except:
             raise exceptions.ValidationError("Module Set Error. Please contact the administrator")
 
