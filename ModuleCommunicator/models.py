@@ -10,6 +10,8 @@ from AnalysisSite.config import DEBUG
 from ModuleCommunicator.tasks import communicator
 from ModuleCommunicator.utils import filename
 from ModuleManager.models import *
+from cv2 import cv2
+import os
 
 
 class ImageModel(models.Model):
@@ -17,9 +19,14 @@ class ImageModel(models.Model):
     token = models.AutoField(primary_key=True)
     uploaded_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+    image_width = models.IntegerField(default=0)
+    image_height = models.IntegerField(default=0)
+    patch_width = models.IntegerField(default=256)
+    patch_height = models.IntegerField(default=256)
     modules = models.TextField(blank=True)
     connected_component_threshold = models.IntegerField(default=1)
     severity_threshold = models.IntegerField(default=1)
+
 
     def save(self, *args, **kwargs):
         super(ImageModel, self).save(*args, **kwargs)
@@ -32,6 +39,10 @@ class ImageModel(models.Model):
 
         for result in module_result:
             result.get_result()
+        image_size = cv2.imread(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../media/' ,str(self.image))).shape
+
+        self.image_height = image_size[0]
+        self.image_width = image_size[1]
         super(ImageModel, self).save()
 
     # Get ModuleModel item from self.modules
