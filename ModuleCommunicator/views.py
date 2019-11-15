@@ -22,8 +22,3 @@ class ImageViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(token=token)
 
         return queryset
-
-
-# class ResultViewSet(viewsets.ReadOnlyModelViewSet):
-#     queryset = ResultModel.objects.all()
-#     serializer_class = ResultSerializer
