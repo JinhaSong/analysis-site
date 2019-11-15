@@ -19,13 +19,13 @@ class ImageModel(models.Model):
     token = models.AutoField(primary_key=True)
     uploaded_date = models.DateTimeField(auto_now_add=True)
     updated_date = models.DateTimeField(auto_now=True)
+    modules = models.TextField(blank=True)
     image_width = models.IntegerField(default=0)
     image_height = models.IntegerField(default=0)
-    patch_width = models.IntegerField(default=256)
-    patch_height = models.IntegerField(default=256)
-    modules = models.TextField(blank=True)
-    connected_component_threshold = models.IntegerField(default=1)
-    severity_threshold = models.IntegerField(default=1)
+    patch_size = models.IntegerField(default=256)
+    region_connectivity = models.IntegerField(default=0)
+    region_noise_filter = models.IntegerField(default=0)
+    severity_threshold = models.IntegerField(default=200)
 
 
     def save(self, *args, **kwargs):
@@ -86,14 +86,18 @@ class ResultModel(models.Model):
                 self.task = communicator(
                     self.module.url,
                     self.image.image.path,
-                    self.image.connected_component_threshold,
+                    self.image.patch_size,
+                    self.image.region_connectivity,
+                    self.image.region_noise_filter,
                     self.image.severity_threshold
                 )
             else:
                 self.task = communicator.delay(
                     self.module.url,
                     self.image.image.path,
-                    self.image.connected_component_threshold,
+                    self.image.patch_size,
+                    self.image.region_connectivity,
+                    self.image.region_noise_filter,
                     self.image.severity_threshold
                 )
         except:

@@ -16,7 +16,7 @@ import glob
 import os
 
 @app.task
-def communicator(url, image_path, cc_th, severity_th):
+def communicator(url, image_path, patch_size, region_connectivity, region_noise_filter, severity_threshold):
     url_cls = 'http://mltwins.sogang.ac.kr:8001'
     url_seg = 'http://mltwins.sogang.ac.kr:8002'
     url_cls_detail = 'http://mltwins.sogang.ac.kr:8003'
@@ -37,14 +37,15 @@ def communicator(url, image_path, cc_th, severity_th):
     print("====== classification detail fin {} ======".format(end-start))
 
     start = time.time()
-    region_results = make_region(cls_result_data)
+    print("region_noise_filter", region_connectivity, region_noise_filter)
+    region_results = make_region(cls_result_data, connectivity_option=region_connectivity, noise_filter_option=region_noise_filter)
     end = time.time()
     print("====== region fin {} ======".format(end - start))
 
     cls_result_data = cls_result_data['results'][0]['module_result']
 
     start = time.time()
-    severity_result, count = crack_width_analysis(seg_image, severity_th, cls_result_data, iter=30, patch_size=256)
+    severity_result, count = crack_width_analysis(seg_image, severity_threshold, cls_result_data, iter=30, patch_size=256)
     end = time.time()
 
     print("====== {} patches / severity_result fin {} ======".format(count, end - start))
