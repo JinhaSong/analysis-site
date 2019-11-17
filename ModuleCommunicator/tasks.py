@@ -16,7 +16,7 @@ import glob
 import os
 
 @app.task
-def communicator(url, image_path, patch_size, region_connectivity, region_noise_filter, severity_threshold):
+def communicator(url, image_path, image_width, image_height, patch_size, connected_component_threshold, region_connectivity, region_noise_filter, severity_threshold):
     url_cls = 'http://mltwins.sogang.ac.kr:8001'
     url_seg = 'http://mltwins.sogang.ac.kr:8002'
     url_cls_detail = 'http://mltwins.sogang.ac.kr:8003'
@@ -36,31 +36,13 @@ def communicator(url, image_path, patch_size, region_connectivity, region_noise_
     end = time.time()
     print("====== classification detail fin {} ======".format(end-start))
 
-    start = time.time()
-    print("region_noise_filter", region_connectivity, region_noise_filter)
-    region_results = make_region(cls_result_data, connectivity_option=region_connectivity, noise_filter_option=region_noise_filter)
-    end = time.time()
-    print("====== region fin {} ======".format(end - start))
-
+    classification_result = cls_result_data
     cls_result_data = cls_result_data['results'][0]['module_result']
 
     start = time.time()
-    severity_result, count = crack_width_analysis(seg_image, severity_threshold, cls_result_data, iter=30, patch_size=256)
+    severity_result, count = crack_width_analysis(seg_image, severity_threshold, cls_result_data, patch_size=256)
     end = time.time()
-
     print("====== {} patches / severity_result fin {} ======".format(count, end - start))
-
-    # detail = [
-    #     {'description': 'ac', 'score': 0},
-    #     {'description': 'lc', 'score': 0},
-    #     {'description': 'detail_norm', 'score': 0},
-    #     {'description': 'tc', 'score': 0}
-    # ]
-
-    # for region_result in region_results:
-    #     region_type = region_result['region_type']
-    #     if region_type == 'patch' :
-    #         region_result['region_area'][0]['label'].extend(detail)
 
     for i in range(len(cls_result_data)) :
         cls_position = cls_result_data[i]['position']
@@ -71,7 +53,6 @@ def communicator(url, image_path, patch_size, region_connectivity, region_noise_
                 cls_result_data[i]['label'].extend(cls_detail_result[j]['label'])
                 j = len(cls_detail_result)
 
-    count = 0
     for i in range(len(cls_result_data)) :
         cls_position = cls_result_data[i]['position']
         for j in range(len(severity_result)) :
@@ -85,9 +66,11 @@ def communicator(url, image_path, patch_size, region_connectivity, region_noise_
                 cls_result_data[i]['severity']['maxy'] = float(severity_result[j]['maxy'])
                 cls_result_data[i]['severity']['max_width_x'] = float(severity_result[j]['max_width_x'])
                 cls_result_data[i]['severity']['max_width_y'] = float(severity_result[j]['max_width_y'])
-                count += 1
-    print("count", count)
 
+    start = time.time()
+    region_results = make_region(image_path, classification_result, image_width, image_height, patch_size, connected_component_threshold=connected_component_threshold, connectivity_option=region_connectivity, noise_filtering_option=region_noise_filter)
+    end = time.time()
+    print("====== region fin {} ======".format(end - start))
 
     result = {}
     result['cls_result'] = cls_result_data

@@ -18,5 +18,5 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ImageModel
         fields = ('image', 'modules', 'token', 'uploaded_date', 'updated_date', 'image_width', 'image_height', 'patch_size', 'results',
-                  'region_connectivity', 'region_noise_filter', 'severity_threshold')
+                  'connected_component_threshold', 'region_connectivity', 'region_noise_filter', 'severity_threshold')
         read_only_fields = ('token', 'uploaded_date', 'updated_date', 'image_width', 'image_height', 'results')

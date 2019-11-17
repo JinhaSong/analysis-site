@@ -23,6 +23,7 @@ class ImageModel(models.Model):
     image_width = models.IntegerField(default=0)
     image_height = models.IntegerField(default=0)
     patch_size = models.IntegerField(default=256)
+    connected_component_threshold = models.IntegerField(default=1)
     region_connectivity = models.IntegerField(default=0)
     region_noise_filter = models.IntegerField(default=0)
     severity_threshold = models.IntegerField(default=200)
@@ -81,12 +82,16 @@ class ResultModel(models.Model):
     # Celery Delay
     def set_task(self):
         self.task = None
+        image_size = cv2.imread(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../media/' ,str(self.image.image))).shape
         try:
             if DEBUG:
                 self.task = communicator(
                     self.module.url,
                     self.image.image.path,
+                    image_size[1],
+                    image_size[0],
                     self.image.patch_size,
+                    self.image.connected_component_threshold,
                     self.image.region_connectivity,
                     self.image.region_noise_filter,
                     self.image.severity_threshold
@@ -95,7 +100,10 @@ class ResultModel(models.Model):
                 self.task = communicator.delay(
                     self.module.url,
                     self.image.image.path,
+                    image_size[1],
+                    image_size[0],
                     self.image.patch_size,
+                    self.image.connected_component_threshold,
                     self.image.region_connectivity,
                     self.image.region_noise_filter,
                     self.image.severity_threshold
