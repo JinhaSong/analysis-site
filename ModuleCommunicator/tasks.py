@@ -40,9 +40,9 @@ def communicator(url, image_path, image_width, image_height, patch_size, connect
     cls_result_data = cls_result_data['results'][0]['module_result']
 
     start = time.time()
-    severity_result, count = crack_width_analysis(seg_image, severity_threshold, cls_result_data, patch_size=256)
+    severity_result = crack_width_analysis(seg_image, severity_threshold, cls_result_data, patch_size=256)
     end = time.time()
-    print("====== {} patches / severity_result fin {} ======".format(count, end - start))
+    print("====== severity fin {} ======".format(end - start))
 
     for i in range(len(cls_result_data)) :
         cls_position = cls_result_data[i]['position']

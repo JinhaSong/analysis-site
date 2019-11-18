@@ -162,7 +162,7 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                             'x': current_x * patch_size, 'y': current_y * patch_size,
                         }]})
 
-        # region number sorting and serverity processing
+        # region number sorting and severity processing
         for i in range(0, len(region_result)):
             region_result[i]['region'] = i
             region_type = region_result[i]['region_type']
@@ -215,12 +215,12 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                 region_result[i]['minx'] = min(minx)
                 region_result[i]['miny'] = min(miny)
                 region_result[i]['area'] = (max(maxx) - min(minx)) * (max(maxy) - min(miny))
-                region_result[i]['serverity'] = crack_region_serverity(max_of_total_max_width)
+                region_result[i]['severity'] = crack_region_severity(max_of_total_max_width)
 
             # if is patch
             elif is_patch:
                 patching_region = [min(minx), min(miny), max(maxx), max(maxy)]
-                area, bbox, contour, patching_seg_image = patching_region_serverity(input_image, patching_region,
+                area, bbox, contour, patching_seg_image = patching_region_severity(input_image, patching_region,
                                                                                     patch_size)
                 # print((contour))
                 patching_bbox_minx, patching_bbox_miny, patching_bbox_maxx, patching_bbox_maxy = bbox
@@ -359,17 +359,17 @@ def noise_filtering(crack_map, axis_x, axis_y, noise_filtering_option):
     return crack_map
 
 
-def crack_region_serverity(max_of_total_max_width):
+def crack_region_severity(max_of_total_max_width):
     if max_of_total_max_width <= 6:
-        serverity = 'low'
+        severity = 'low'
     elif max_of_total_max_width > 6 and max_of_total_max_width <= 19:
-        serverity = 'medium'
+        severity = 'medium'
     else:
-        serverity = 'high'
-    return serverity
+        severity = 'high'
+    return severity
 
 
-def patching_region_serverity(input_image, patching_region, patch_size):
+def patching_region_severity(input_image, patching_region, patch_size):
     area = (patching_region[0], patching_region[1], patching_region[2], patching_region[3])
     cropped_image = input_image.crop(area)
     np_image = np.array(cropped_image)
@@ -381,7 +381,8 @@ def patching_region_serverity(input_image, patching_region, patch_size):
 
     # if image exist, do work
     if len(np_image) > 0:
-        dest_height, dest_width = np_image.shape
+        dest_height = np_image.shape[0]
+        dest_width = np_image.shape[1]
 
         ret, threshed_img = cv2.threshold(np_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
@@ -408,7 +409,7 @@ def patching_region_serverity(input_image, patching_region, patch_size):
         threshed_img_boder_reshape = cv2.resize(threshed_img_boder, None, fx=dest_width / width,
                                                 fy=dest_height / height, interpolation=cv2.INTER_AREA)
 
-        __, contours, hier = cv2.findContours(threshed_img_boder_reshape, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hier = cv2.findContours(threshed_img_boder_reshape, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         len_of_contours = []
         # TODO : not to use x, y
         x = []

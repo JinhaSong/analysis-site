@@ -261,6 +261,7 @@ import numpy as np
 from PIL import Image
 from tqdm import tqdm
 from io import BytesIO
+import multiprocessing
 
 def draw_rectangle(A,x,y):
     cv2.rectangle(A, (x - 1, y - 1), (x + 2, y + 2), (0, 0, 255), 1)
@@ -380,7 +381,7 @@ def count_length(arr,base_x,base_y,amount_of_change_x,amount_of_change_y,size_x,
     increase = 1
     pick_x, pick_y = base_x,base_y
     if abs(amount_of_change_x)==1 and abs(amount_of_change_y)==1:
-        increase = 1.4142135
+        increase = 1.4142
     while arr[pick_y,pick_x] == 255 :
         pick_x +=amount_of_change_x
         pick_y +=amount_of_change_y
@@ -506,67 +507,102 @@ def visualize_circle(A,x_y_color):
         A[y,x]=(0,255,255)
     return A
 
-def full_process(A):
+# def full_process(A):
+#
+#     A, avg_crack_width, minx, miny, maxx, maxy, max_width_dict = every_search_get_max_avg_width_of_crack(A) # 옛날 함수
+#     A_height,A_width= A.shape
+#     max_width_x,max_width_y,max_crack_width = get_max_width_x_max_width_y(A,max_width_dict)
+#
+#     directions=[[-1,0,1,0],[0,-1,0,1],[-1,-1,1,1],[1,-1,-1,1]] ## [ 'horizontal', 'vertical', 'diagonal' , 'reverse_diagonal']
+#
+#     direction=find_min_direction(A,max_width_x,max_width_y,A_width,A_height)
+#     line_x2, line_y2 = get_extended_line_x_y(A, max_width_x, max_width_y, directions[direction][2],directions[direction][3], A_width, A_height)
+#     line_x1,line_y1=get_extended_line_x_y(A, max_width_x, max_width_y, directions[direction][0], directions[direction][1], A_width, A_height)
+#
+#     return max_crack_width, avg_crack_width, max_width_x, max_width_y, minx, miny, maxx, maxy,line_x1,line_y1,line_x2,line_y2
 
-    A, avg_crack_width, minx, miny, maxx, maxy, max_width_dict = every_search_get_max_avg_width_of_crack(A) # 옛날 함수
-    A_height,A_width= A.shape
-    max_width_x,max_width_y,max_crack_width = get_max_width_x_max_width_y(A,max_width_dict)
+def full_process(A,count,return_list,patch_size,i_j):
+    A, total_average_width, minx, miny, maxx, maxy, max_width_dict = every_search_get_max_avg_width_of_crack(A) # 옛날 함수
+    if len(A.shape) == 3:
+        A_height, A_width, _ = A.shape
+    else :
+        A_height,A_width= A.shape
 
+    max_width_x,max_width_y,total_max_width = get_max_width_x_max_width_y(A,max_width_dict)
     directions=[[-1,0,1,0],[0,-1,0,1],[-1,-1,1,1],[1,-1,-1,1]] ## [ 'horizontal', 'vertical', 'diagonal' , 'reverse_diagonal']
-
     direction=find_min_direction(A,max_width_x,max_width_y,A_width,A_height)
     line_x2, line_y2 = get_extended_line_x_y(A, max_width_x, max_width_y, directions[direction][2],directions[direction][3], A_width, A_height)
-    line_x1,line_y1=get_extended_line_x_y(A, max_width_x, max_width_y, directions[direction][0], directions[direction][1], A_width, A_height)
+    line_x1, line_y1 = get_extended_line_x_y(A, max_width_x, max_width_y, directions[direction][0], directions[direction][1], A_width, A_height)
 
-    return max_crack_width, avg_crack_width, max_width_x, max_width_y, minx, miny, maxx, maxy,line_x1,line_y1,line_x2,line_y2
+    # print('file name : ', fname)
+    # print('----------------------------------------------------------------------------')
+    i , j = i_j[0],i_j[1]
+
+    return_list[count] = {
+                'x':patch_size*i,
+                'y':patch_size*j,
+                'w':patch_size,
+                'h':patch_size,
+                'total_max_width':total_max_width,
+                'total_average_width':total_average_width,
+                'minx':minx,
+                'miny':miny,
+                'maxx':maxx,
+                'maxy':maxy,
+                'max_width_x':max_width_x,
+                'max_width_y':max_width_y,
+                'line_x1':line_x1,
+                'line_y1':line_y1,
+                'line_x2':line_x2,
+                'line_y2':line_y2
+            }
+
 
 def crack_width_analysis(seg_image, threshold, cls_result_data, patch_size=256):
     image = base64.b64decode(seg_image)
 
-    full_img_dict = []
+    full_img_dict = {}
     input_img = Image.open(BytesIO(image)).convert('L')
-    # input_img=Image.open(seg_image).convert('L')
     display = np.asarray(input_img)
     display.flags.writeable = True
     display[display <= threshold] = 0
-    # cv2.imwrite("test_" + str(threshold) + ".png", display)
+    cv2.imwrite("test_" + str(threshold) + ".png", display)
 
     width, height = input_img.size
     patch_width = int(width / patch_size)
     patch_height = int(height / patch_size)
-    count = 0
+    patch_size = 256
 
-    for j in range(0, patch_height):
+    patches = []
+    i_j = []
+    jobs = []
+
+    for j in tqdm(range(0, patch_height), desc="Divide by Patches"):
         for i in range(0, patch_width):
             y = patch_size * j
             x = patch_size * i
 
-            for k in range(len(cls_result_data)):
+            for k in range(len(cls_result_data)) :
                 cls_position = cls_result_data[k]['position']
                 crack = cls_result_data[k]
                 labels = sorted(crack['label'], key=lambda label_list: (label_list['score']), reverse=True)
-                if labels[0]['description'] == 'crack':
+                if labels[0]['description'] == 'crack' :
                     if cls_position['x'] == x and cls_position['y'] == y:
                         patch_img = display[patch_size * j:patch_size * (j + 1), patch_size * i:patch_size * (i + 1)]
-                        total_max_width, total_average_width, max_width_x, max_width_y, minx, miny, maxx, maxy,line_x1,line_y1,line_x2,line_y2 = full_process(patch_img)
-                        full_img_dict.append({
-                            'x':patch_size*i,
-                            'y':patch_size*j,
-                            'w':patch_size,
-                            'h':patch_size,
-                            'total_max_width':total_max_width,
-                            'total_average_width':total_average_width,
-                            'minx':minx,
-                            'miny':miny,
-                            'maxx':maxx,
-                            'maxy':maxy,
-                            'max_width_x':max_width_x,
-                            'max_width_y':max_width_y,
-                            'line_x1':line_x1,
-                            'line_y1':line_y1,
-                            'line_x2':line_x2,
-                            'line_y2':line_y2
+                        patches.append(patch_img)
+                        i_j.append([i, j])
 
-                        })
-                        count += 1
-    return full_img_dict, count
+    manager = multiprocessing.Manager()
+    full_img_dict = manager.list()
+    for i in range(0,len(patches)):
+        full_img_dict.append(None)
+
+    for i in tqdm(range(0,len(patches)),desc="Calculating Severity(Multi-processing)"):
+            p = multiprocessing.Process(target=full_process, args=(patches[i],i,full_img_dict,patch_size,i_j[i]))
+            jobs.append(p)
+            p.start()
+
+    for proc in jobs:
+        proc.join()
+
+    return full_img_dict
