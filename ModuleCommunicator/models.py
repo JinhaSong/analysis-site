@@ -92,6 +92,7 @@ class ResultModel(models.Model):
                 image_size[1],
                 image_size[0],
                 self.image.patch_size,
+                self.image.region_threshold,
                 self.image.connected_component_threshold,
                 self.image.region_connectivity,
                 self.image.region_noise_filter,

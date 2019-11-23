@@ -58,7 +58,7 @@ OPTION_NOISE_FILTER_CUT_EDGE = 2
 OPTION_NOISE_FILTER_CUT_EDGE_AND_FILL_IN_THE_BLANK = 3
 CHECK_POSITION_LIST = [-1, 0 ,1]
 
-def make_region(image_path, cls_result_data, image_width=3704, image_height=10000, patch_size=256, connected_component_threshold=1, connectivity_option=1, noise_filtering_option=3):
+def make_region(image_path, cls_result_data, image_width=3704, image_height=10000, patch_size=256, region_thresold=0,connected_component_threshold=1, connectivity_option=1, noise_filtering_option=3):
     results = cls_result_data['results']
 
     input_image = Image.open(image_path)
