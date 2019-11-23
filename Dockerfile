@@ -2,8 +2,8 @@ FROM ubuntu:16.04
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-	   git wget python3-pip apt-utils libglib2.0-0 libsm6 libxrender1 libxext6\
-	&& rm -rf /var/lib/apt/lists/*
+           git wget python3-pip apt-utils libglib2.0-0 libsm6 libxrender1 libxext6\
+        && rm -rf /var/lib/apt/lists/*
 
 ENV DOCKERIZE_VERSION v0.6.1
 RUN wget -q https://github.com/jwilder/dockerize/releases/download/$DOCKERIZE_VERSION/dockerize-linux-amd64-$DOCKERIZE_VERSION.tar.gz \
