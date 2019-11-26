@@ -1,12 +1,13 @@
 from __future__ import print_function
 
 from AnalysisSite.celerys import app
-import json
-import requests
+
 import ast
 import time
 from ModuleCommunicator.utils.region import make_region
 from ModuleCommunicator.utils.severity import crack_width_analysis
+from ModuleCommunicator.utils.module_result import *
+from ModuleCommunicator.utils.image import *
 
 from cv2 import cv2
 import numpy as np
@@ -44,6 +45,7 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
     end = time.time()
     print("====== severity fin {} ======".format(end - start))
 
+    start = time.time()
     for i in range(len(cls_result_data)) :
         cls_position = cls_result_data[i]['position']
         cls_detail_result = cls_detail_result_data['results'][0]['module_result']
@@ -66,46 +68,25 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
                 cls_result_data[i]['severity']['maxy'] = float(severity_result[j]['maxy'])
                 cls_result_data[i]['severity']['max_width_x'] = float(severity_result[j]['max_width_x'])
                 cls_result_data[i]['severity']['max_width_y'] = float(severity_result[j]['max_width_y'])
+    end = time.time()
+    print("====== json data parse fin {} ======".format(end - start))
 
     start = time.time()
     region_results = make_region(image_path, classification_result, image_width, image_height, patch_size, region_thresold, connectivity_option=region_connectivity, noise_filtering_option=region_noise_filter)
     end = time.time()
     print("====== region fin {} ======".format(end - start))
 
+    start = time.time()
+    result_image = make_result_image(region_results, seg_image)
+    end = time.time()
+    print("====== create result image fin {} ======".format(end - start))
+
     result = {}
     result['cls_result'] = cls_result_data
     result['seg_image'] = seg_image
     result['region_result'] = region_results
-    result['result_image'] = ''
+    result['result_image'] = result_image
     return result
 
-def get_classification(url, image_path) :
-    cls_data = dict()
-    cls_image = open(image_path, 'rb')
-    cls_files = {'image': cls_image}
-    cls_response = requests.post(url=url, data=cls_data, files=cls_files)
-    cls_result_data = json.loads((cls_response.content).decode('utf-8'))
-    cls_image.close()
 
-    return cls_result_data
-
-def get_segmentation(url, cls_result_data) :
-    seg_data = dict()
-    seg_file = json.dumps(cls_result_data, ensure_ascii=False, indent='')
-    seg_files = {'file': seg_file}
-    seg_response = requests.post(url=url, data=seg_data, files=seg_files)
-    seg_result_data = json.loads((seg_response.content).decode('utf-8'))
-    seg_image = seg_result_data['result']
-
-    return seg_image
-
-def get_classification_detail(url, seg_image, cls_result_data) :
-    cls_detail_data = dict()
-    seg_file = json.dumps(cls_result_data, ensure_ascii=False, indent='')
-    seg_files = {'file': seg_file}
-    cls_detail_data['image'] = seg_image
-    cls_detail_response = requests.post(url=url, data=cls_detail_data, files=seg_files)
-    cls_detail_result_data = json.loads((cls_detail_response.content).decode('utf-8'))
-
-    return cls_detail_result_data
 
