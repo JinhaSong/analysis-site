@@ -565,7 +565,7 @@ def crack_width_analysis(seg_image, threshold, cls_result_data, patch_size=256):
     input_img = Image.open(BytesIO(image)).convert('L')
     display = np.asarray(input_img)
     display.flags.writeable = True
-    display[display <= threshold] = 0
+    binaryize(display, threshold)
     cv2.imwrite("test_" + str(threshold) + ".png", display)
 
     width, height = input_img.size
