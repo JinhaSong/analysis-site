@@ -302,7 +302,7 @@ def get_circle_x_y_color_list(A,xCenter, yCenter, radius):
                 current=A[y,x]
                 if np.all(current==black):
                     color ='black'
-                if np.all(current==white):
+                if np.all(current!=black):
                     color = 'white'
                 circle_x_y_color.append([x, y,color])
 
@@ -382,7 +382,7 @@ def count_length(arr,base_x,base_y,amount_of_change_x,amount_of_change_y,size_x,
     pick_x, pick_y = base_x,base_y
     if abs(amount_of_change_x)==1 and abs(amount_of_change_y)==1:
         increase = 1.4142
-    while arr[pick_y,pick_x] == 255 :
+    while arr[pick_y,pick_x] != 0 :
         pick_x +=amount_of_change_x
         pick_y +=amount_of_change_y
         if pick_y>=size_y or pick_x>=size_x :
@@ -436,14 +436,14 @@ def every_search_get_max_avg_width_of_crack(A):
             max_width_y = y
             max_width_dict['{}_{}'.format(x,y)]=min_value
         crack_width.append(min_value)
-    avg_crack_width = sum(crack_width)/len(crack_width)
+    avg_crack_width = round(sum(crack_width)/len(crack_width),2)
 
     return A,avg_crack_width,minx,miny,maxx,maxy,max_width_dict
 
 def visualize_extended_line(A,base_x,base_y,amount_of_change_x,amount_of_change_y,size_x,size_y,color):
     pick_x, pick_y = base_x, base_y
 
-    while A[pick_y, pick_x][0] == 255 :
+    while A[pick_y, pick_x][0] != 0 :
         A[pick_y, pick_x] = color
         pick_x += amount_of_change_x
         pick_y += amount_of_change_y
@@ -455,7 +455,7 @@ def visualize_extended_line(A,base_x,base_y,amount_of_change_x,amount_of_change_
 
 def get_extended_line_x_y(A,base_x,base_y,amount_of_change_x,amount_of_change_y,size_x,size_y):
     pick_x, pick_y = base_x, base_y
-    while A[pick_y, pick_x]== 255 :
+    while A[pick_y, pick_x]!= 0 :
         pick_x += amount_of_change_x
         pick_y += amount_of_change_y
         if pick_y == size_y :
@@ -565,7 +565,7 @@ def crack_width_analysis(seg_image, threshold, cls_result_data, patch_size=256):
     input_img = Image.open(BytesIO(image)).convert('L')
     display = np.asarray(input_img)
     display.flags.writeable = True
-    binaryize(display, threshold)
+    display[display<threshold] = 0
     cv2.imwrite("test_" + str(threshold) + ".png", display)
 
     width, height = input_img.size
