@@ -58,7 +58,7 @@ OPTION_NOISE_FILTER_CUT_EDGE = 2
 OPTION_NOISE_FILTER_CUT_EDGE_AND_FILL_IN_THE_BLANK = 3
 CHECK_POSITION_LIST = [-1, 0 ,1]
 
-def make_region(image_path, cls_result_data, image_width=3704, image_height=10000, patch_size=256, region_thresold=0,connected_component_threshold=1, connectivity_option=1, noise_filtering_option=3):
+def make_region(image_path, cls_result_data, image_width=3704, image_height=10000, patch_size=256, region_threshold=0, connectivity_option=1, noise_filtering_option=3):
     results = cls_result_data['results']
 
     input_image = Image.open(image_path)
@@ -162,6 +162,10 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                             'x': current_x * patch_size, 'y': current_y * patch_size,
                         }]})
 
+        # region thresholding process
+
+        region_result = region_thresholding_process(region_result, region_threshold)
+
         # region number sorting and severity processing
         for i in range(0, len(region_result)):
             region_result[i]['region'] = i
@@ -175,7 +179,9 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
             total_average_width = []
             total_max_width = []
             region_area_infos = region_result[i]['region_area']
-
+            # print('p', len(region_area_infos))
+            # if len(region_area_infos) < region_threshold :
+            # del region_result[i]
             is_crack = False
             is_patch = False
 
@@ -205,11 +211,14 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                     print('Region data error', 'region_type : ', region_type)
 
             if is_crack:
+                # print(total_max_width)
                 max_of_total_max_width = max(total_max_width)
+                # if max_of_total_max_width != 0:
                 region_result[i]['total_max_width'] = max_of_total_max_width
-                region_result[i]['total_average_width'] = sum(total_average_width) / len(total_average_width)
                 region_result[i]['max_width_x'] = max_width_x[total_max_width.index(max_of_total_max_width)]
                 region_result[i]['max_width_y'] = max_width_y[total_max_width.index(max_of_total_max_width)]
+
+                region_result[i]['total_average_width'] = sum(total_average_width) / len(total_average_width)
                 region_result[i]['maxx'] = max(maxx)
                 region_result[i]['maxy'] = max(maxy)
                 region_result[i]['minx'] = min(minx)
@@ -230,12 +239,16 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                 region_result[i]['patching_region_maxx'] = int(patching_region[2])
                 region_result[i]['patching_region_maxy'] = int(patching_region[3])
 
-                region_result[i]['patching_bbox_minx'] = int(patching_bbox_minx)
-                region_result[i]['patching_bbox_miny'] = int(patching_bbox_miny)
-                region_result[i]['patching_bbox_maxx'] = int(patching_bbox_maxx)
-                region_result[i]['patching_bbox_maxy'] = int(patching_bbox_maxy)
-                region_result[i]['contours'] = contour
-                region_result[i]['patching_seg_image'] = str(base64.b64encode(patching_seg_image))
+                region_result[i]['patching_bbox_minx'] = int(patching_bbox_minx + patching_region[0])
+                region_result[i]['patching_bbox_miny'] = int(patching_bbox_miny + patching_region[1])
+                region_result[i]['patching_bbox_maxx'] = int(patching_bbox_maxx + patching_region[0])
+                region_result[i]['patching_bbox_maxy'] = int(patching_bbox_maxy + patching_region[1])
+                # for c in contour:
+                #     c[0] = patching_region[0] + c[0]
+                #     c[1] = patching_region[1] + c[1]
+                # region_result[i]['contours'] = contour
+                # print(contour)
+                region_result[i]['patching_seg_image'] = str(patching_seg_image)
 
         return region_result
 
@@ -373,16 +386,15 @@ def patching_region_severity(input_image, patching_region, patch_size):
     area = (patching_region[0], patching_region[1], patching_region[2], patching_region[3])
     cropped_image = input_image.crop(area)
     np_image = np.array(cropped_image)
-
     area = 0
     bbox = [0, 0, 0, 0]
     contours = [[[0, 1], [0, 1]]]
     seg_image = 0
+    contour = []
 
     # if image exist, do work
-    if len(np_image) > 0:
-        dest_height = np_image.shape[0]
-        dest_width = np_image.shape[1]
+    if len(np_image) > 0 and len(np_image.shape) < 3:
+        dest_height, dest_width = np_image.shape
 
         ret, threshed_img = cv2.threshold(np_image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
@@ -408,13 +420,13 @@ def patching_region_severity(input_image, patching_region, patch_size):
         height, width = threshed_img.shape
         threshed_img_boder_reshape = cv2.resize(threshed_img_boder, None, fx=dest_width / width,
                                                 fy=dest_height / height, interpolation=cv2.INTER_AREA)
+        seg_image = base64.b64encode(threshed_img_boder_reshape)
 
         contours, hier = cv2.findContours(threshed_img_boder_reshape, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         len_of_contours = []
         # TODO : not to use x, y
         x = []
         y = []
-        contour = []
         for c in contours:
             len_of_contours.append(len(c))
 
@@ -433,8 +445,20 @@ def patching_region_severity(input_image, patching_region, patch_size):
             area = cv2.contourArea(contours[0])
         else:
             print("Patching segmentation error : contours not exist!!")
-
+    elif len(np_image.shape) == 3:
+        print("Patching image cropping error : input gray image")
     else:
         print('Patching image cropping error : cropped_image not exist!!')
 
-    return area, bbox, contour, threshed_img_boder_reshape
+    return area, bbox, contour, seg_image
+
+
+def region_thresholding_process(region_result, region_threshold):
+    j = 0
+    while (j < len(region_result)):
+        # print('j', j)
+        if len(region_result[j]['region_area']) < region_threshold:
+            del region_result[j]
+            j -= 1
+        j += 1
+    return region_result
