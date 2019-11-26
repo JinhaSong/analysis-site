@@ -15,11 +15,18 @@ def color():
 
     return rect_color, text_color
 
-def make_result_image(region_results, seg_image) :
-    image = base64.b64decode(seg_image)
-    pil_image = Image.open(BytesIO(image)).convert('RGB')
+def make_result_image(region_results, severity_threshold, str_seg_image) :
+    image = base64.b64decode(str_seg_image)
+    input_img = Image.open(BytesIO(image)).convert('L')
+    display = numpy.asarray(input_img)
+    display.flags.writeable = True
+    display[display < severity_threshold] = 0
+    
+    pil_image = Image.fromarray(display).convert('RGB')
+
     open_cv_image = numpy.array(pil_image)
     seg_image = open_cv_image[:, :, ::-1].copy()
+    
     for region_result in region_results:
         region_num = str(region_result['region'])
         region_type = region_result['region_type']

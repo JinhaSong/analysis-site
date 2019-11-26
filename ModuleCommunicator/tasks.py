@@ -77,7 +77,7 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
     print("====== region fin {} ======".format(end - start))
 
     start = time.time()
-    result_image = make_result_image(region_results, seg_image)
+    result_image = make_result_image(region_results, severity_threshold, seg_image)
     end = time.time()
     print("====== create result image fin {} ======".format(end - start))
 
