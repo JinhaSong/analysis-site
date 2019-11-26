@@ -120,9 +120,15 @@ class ResultModel(models.Model):
             if DEBUG:
                 task = self.task
                 self.cls_result = task['cls_result']
+                self.region_result = task['region_result']
+                self.seg_image = task['seg_image']
+                self.result_image = task['result_image']
             else:
                 task = self.task.get()
                 self.cls_result = task['cls_result']
+                self.region_result = task['region_result']
+                self.seg_image = task['seg_image']
+                self.result_image = task['result_image']
         except:
             raise exceptions.ValidationError("Module Get Error. Please contact the administrator")
         super(ResultModel, self).save()

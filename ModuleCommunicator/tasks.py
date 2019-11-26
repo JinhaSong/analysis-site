@@ -76,6 +76,7 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
     result['cls_result'] = cls_result_data
     result['seg_image'] = seg_image
     result['region_result'] = region_results
+    result['result_image'] = ''
     return result
 
 def get_classification(url, image_path) :
