@@ -24,7 +24,6 @@ class ImageModel(models.Model):
     image_height = models.IntegerField(default=0)
     patch_size = models.IntegerField(default=256)
     region_threshold = models.IntegerField(default=0)
-    connected_component_threshold = models.IntegerField(default=1)
     region_connectivity = models.IntegerField(default=0)
     region_noise_filter = models.IntegerField(default=0)
     severity_threshold = models.IntegerField(default=200)
@@ -72,7 +71,10 @@ class ImageModel(models.Model):
 class ResultModel(models.Model):
     image = models.ForeignKey(ImageModel, related_name='results', on_delete=models.CASCADE)
     module = models.ForeignKey(ModuleElementModel)
-    module_result = JSONField(null=True)
+    cls_result = JSONField(null=True)
+    region_result = JSONField(null=True)
+    seg_image = models.TextField()
+    result_image = models.TextField()
 
 
     def save(self, *args, **kwargs):
@@ -93,7 +95,6 @@ class ResultModel(models.Model):
                 image_size[0],
                 self.image.patch_size,
                 self.image.region_threshold,
-                self.image.connected_component_threshold,
                 self.image.region_connectivity,
                 self.image.region_noise_filter,
                 self.image.severity_threshold
@@ -105,7 +106,7 @@ class ResultModel(models.Model):
                 image_size[1],
                 image_size[0],
                 self.image.patch_size,
-                self.image.connected_component_threshold,
+                self.image.region_threshold,
                 self.image.region_connectivity,
                 self.image.region_noise_filter,
                 self.image.severity_threshold
@@ -117,9 +118,11 @@ class ResultModel(models.Model):
     def get_result(self):
         try:
             if DEBUG:
-                self.module_result = self.task
+                task = self.task
+                self.cls_result = task['cls_result']
             else:
-                self.module_result = self.task.get()
+                task = self.task.get()
+                self.cls_result = task['cls_result']
         except:
             raise exceptions.ValidationError("Module Get Error. Please contact the administrator")
         super(ResultModel, self).save()

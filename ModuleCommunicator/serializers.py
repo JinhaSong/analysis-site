@@ -4,12 +4,12 @@ from ModuleCommunicator.models import *
 
 
 class ResultSerializer(serializers.HyperlinkedModelSerializer):
-    module_name = serializers.CharField(source='get_module_name', read_only=True)
+    # module_name = serializers.CharField(source='get_module_name', read_only=True)
 
     class Meta:
         model = ResultModel
-        fields = ('module_name', 'module_result')
-        read_only_fields = ('module_name', 'module_result')
+        fields = ('cls_result', 'region_result', 'seg_image', 'result_image')
+        read_only_fields = ('cls_result', 'region_result', 'seg_image', 'result_image')
 
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
@@ -20,7 +20,6 @@ class ImageSerializer(serializers.HyperlinkedModelSerializer):
         fields = ('image', 'modules', 'token', 'uploaded_date', 'updated_date',
                   'image_width', 'image_height', 'patch_size', 'results',
                   'region_threshold',
-                  'connected_component_threshold',
                   'region_connectivity',
                   'region_noise_filter',
                   'severity_threshold')

@@ -16,7 +16,7 @@ import glob
 import os
 
 @app.task
-def communicator(url, image_path, image_width, image_height, patch_size, region_thresold, connected_component_threshold, region_connectivity, region_noise_filter, severity_threshold):
+def communicator(url, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
     url_cls = 'http://mltwins.sogang.ac.kr:8001'
     url_seg = 'http://mltwins.sogang.ac.kr:8002'
     url_cls_detail = 'http://mltwins.sogang.ac.kr:8003'
@@ -68,7 +68,7 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
                 cls_result_data[i]['severity']['max_width_y'] = float(severity_result[j]['max_width_y'])
 
     start = time.time()
-    region_results = make_region(image_path, classification_result, image_width, image_height, patch_size, region_thresold, connected_component_threshold=connected_component_threshold, connectivity_option=region_connectivity, noise_filtering_option=region_noise_filter)
+    region_results = make_region(image_path, classification_result, image_width, image_height, patch_size, region_thresold, connectivity_option=region_connectivity, noise_filtering_option=region_noise_filter)
     end = time.time()
     print("====== region fin {} ======".format(end - start))
 
