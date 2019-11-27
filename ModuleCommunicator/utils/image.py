@@ -35,15 +35,15 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
         ys = []
 
         rect_color = None
-        if region_type == "AC" :
+        if region_type == "ac" :
             rect_color = [255,0,0]
-        elif region_type == "LC" :
+        elif region_type == "lc" :
             rect_color = [255,255,0]
-        elif region_type == "TC" :
+        elif region_type == "tc" :
             rect_color = [112,173,71]
-        elif region_type == "PATCH":
+        elif region_type == "patch":
             rect_color = [255,255,255]
-        elif region_type == "POT" :
+        elif region_type == "pot" :
             rect_color = [0,176,240]
 
         for patch in patches:
