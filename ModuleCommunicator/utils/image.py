@@ -55,7 +55,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             h = patch['h']
             
             if count == 0 :
-                min_x = x
+                min_x = x + 100
                 min_y = y + 100
             count+=1
 
