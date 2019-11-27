@@ -77,15 +77,22 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
     print("====== region fin {} ======".format(end - start))
 
     start = time.time()
-    result_image = make_result_image(region_results, severity_threshold, seg_image)
+    seg_image_with_patch = attach_patch(region_results, severity_threshold, seg_image)
+    end = time.time()
+    print("====== attach patch image fin {} ======".format(end - start))
+
+    start = time.time()
+    result_image = make_result_image(region_results, severity_threshold, seg_image_with_patch)
     end = time.time()
     print("====== create result image fin {} ======".format(end - start))
 
+
+
     result = {}
     result['cls_result'] = cls_result_data
-    result['seg_image'] = seg_image
+    result['seg_image'] = convert_image_binary(seg_image_with_patch)
     result['region_result'] = region_results
-    result['result_image'] = result_image
+    result['result_image'] = convert_image_binary(result_image)
     return result
 
 

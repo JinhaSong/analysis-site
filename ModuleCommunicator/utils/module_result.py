@@ -18,7 +18,7 @@ def get_segmentation(url, cls_result_data) :
     seg_response = requests.post(url=url, data=seg_data, files=seg_files)
     seg_result_data = json.loads((seg_response.content).decode('utf-8'))
     seg_image = seg_result_data['result']
-
+    
     return seg_image
 
 def get_classification_detail(url, seg_image, cls_result_data) :

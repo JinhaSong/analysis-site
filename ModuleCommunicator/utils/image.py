@@ -4,7 +4,7 @@ import cv2
 import json
 import random
 import numpy
-from PIL import Image 
+from PIL import Image, ImageOps
 
 def color():
     r = int(random.random() * 256)
@@ -28,7 +28,6 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
     seg_image = open_cv_image[:, :, ::-1].copy()
     
     for region_result in region_results:
-        region_num = str(region_result['region'])
         region_type = region_result['region_type']
         patches = region_result['region_area']
 
@@ -75,11 +74,85 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
         else:
             cv2.putText(seg_image, region_type.upper(), (min_x, min_y),
                         cv2.FONT_HERSHEY_DUPLEX, 2, rect_color, 2)
-    cv2_im = cv2.cvtColor(seg_image, cv2.COLOR_BGR2RGB)
+    tmp = cv2.cvtColor(seg_image, cv2.COLOR_BGR2GRAY)
+    _, alpha = cv2.threshold(tmp, 0, 200, cv2.THRESH_BINARY)
+    b, g, r = cv2.split(seg_image)
+    rgba = [b, g, r, alpha]
+    cv2_im = cv2.merge(rgba, 4)
     pil_im = Image.fromarray(cv2_im)
 
     buffered = BytesIO()
     pil_im.save(buffered, format="PNG")
     result_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
     
+    return result_image
+
+def attach_patch(region_results, severity_threshold, str_seg_image) :
+    patches = []
+    for region_result in region_results :
+        if region_result['region_type'] == "patch" :
+            patches.append(region_result)
+
+    str_image = base64.b64decode(str_seg_image)
+    image = Image.open(BytesIO(str_image)).convert('RGB')
+    background_tmp = numpy.array(image)
+    background = background_tmp[:, :, ::-1].copy()
+
+    result = None
+    for i in range(len(patches)):
+        str_image = base64.b64decode(patches[i]['patching_seg_image'])
+        image = Image.open(BytesIO(str_image)).convert('RGB')
+        patch = numpy.array(image)
+        patch = patch[:, :, ::-1].copy()
+    
+        x = int(patches[i]['patching_region_minx'])
+        y = int(patches[i]['patching_region_miny'])
+        
+        background = cv2.cvtColor(background, cv2.COLOR_BGR2GRAY)
+
+        patch_inverse = numpy.where(patch == 255, 0, 255).astype('uint8')  # Invert patch
+        patch_inverse = cv2.cvtColor(patch_inverse, cv2.COLOR_BGR2GRAY)  # patch grayscale transform
+
+        result = image_blending(background, patch_inverse, x, y).copy()
+
+    pil_im = Image.fromarray(result)
+
+    buffered = BytesIO()
+    pil_im.save(buffered, format="PNG")
+    result_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
+    
+    return result_image
+
+
+def image_blending(background, patch, x, y):
+   _, mask_inv = cv2.threshold(patch, 10, 255, cv2.THRESH_BINARY_INV)
+
+   patch_height, patch_width = patch.shape
+   roi = background[y: y + patch_height, x: x + patch_width]
+
+   roi_patch = cv2.add(patch, roi, mask=mask_inv)
+   result = cv2.add(roi_patch, patch)
+   numpy.copyto(roi, result)
+
+   return background
+
+def convert_image_binary(str_seg_image) :
+    image = base64.b64decode(str_seg_image)
+    input_img = Image.open(BytesIO(image)).convert('RGB')
+    display = numpy.asarray(input_img)
+    display.flags.writeable = True
+    display[display <= 127] = 0
+    display[display > 127] = 255
+    tmp = cv2.cvtColor(display, cv2.COLOR_BGR2GRAY)
+    _, alpha = cv2.threshold(tmp, 0, 127, cv2.THRESH_BINARY)
+    b, g, r = cv2.split(display)
+    rgba = [b, g, r, alpha]
+    seg_img = cv2.merge(rgba, 4)
+
+    pil_im = Image.fromarray(seg_img)
+
+    buffered = BytesIO()
+    pil_im.save(buffered, format="PNG")
+    result_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
+
     return result_image

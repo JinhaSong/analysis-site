@@ -420,7 +420,12 @@ def patching_region_severity(input_image, patching_region, patch_size):
         height, width = threshed_img.shape
         threshed_img_boder_reshape = cv2.resize(threshed_img_boder, None, fx=dest_width / width,
                                                 fy=dest_height / height, interpolation=cv2.INTER_AREA)
-        seg_image = base64.b64encode(threshed_img_boder_reshape)
+
+        pil_im = Image.fromarray(threshed_img_boder_reshape)
+
+        buffered = BytesIO()
+        pil_im.save(buffered, format="PNG")
+        seg_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
 
         contours, hier = cv2.findContours(threshed_img_boder_reshape, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         len_of_contours = []
