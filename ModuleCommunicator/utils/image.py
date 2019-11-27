@@ -31,7 +31,6 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
         region_num = str(region_result['region'])
         region_type = region_result['region_type']
         patches = region_result['region_area']
-        xs = []
         ys = []
 
         rect_color = None
@@ -47,6 +46,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             rect_color = [240,176,0]
         
         min_x = 0
+        min_y = 0
         count = 0
         for patch in patches:
             x = patch['x']
@@ -56,12 +56,11 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             
             if count == 0 :
                 min_x = x
-            xs.append(x)
-            ys.append(y)
-            img = cv2.rectangle(seg_image, (x, y), (x + w, y + h), rect_color, 10)
+                min_y = y + 100
             count+=1
 
-        min_y = min(ys) + 100
+            img = cv2.rectangle(seg_image, (x, y), (x + w, y + h), rect_color, 10)
+
 
         if region_result['region_type'] != 'patch':
             severity = region_result['severity']
