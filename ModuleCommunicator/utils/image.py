@@ -55,7 +55,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             ys.append(y)
             img = cv2.rectangle(seg_image, (x, y), (x + w, y + h), rect_color, 10)
 
-        min_x = min(xs)
+        min_x = min(xs) + 256
         min_y = min(ys) + 100
 
         if region_result['region_type'] != 'patch':
