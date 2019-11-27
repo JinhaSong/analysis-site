@@ -34,7 +34,17 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
         xs = []
         ys = []
 
-        rect_color, text_color = color()
+        rect_color = None
+        if region_type == "AC" :
+            rect_color = [255,0,0]
+        elif region_type == "LC" :
+            rect_color = [255,255,0]
+        elif region_type == "TC" :
+            rect_color = [112,173,71]
+        elif region_type == "PATCH":
+            rect_color = [255,255,255]
+        elif region_type == "POT" :
+            rect_color = [0,176,240]
 
         for patch in patches:
             x = patch['x']
@@ -46,12 +56,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             img = cv2.rectangle(seg_image, (x, y), (x + w, y + h), rect_color, 10)
 
         min_x = min(xs)
-        min_y = min(ys)
-        max_x = max(xs)
-        max_y = max(ys)
-
-        center_x = int(min_x + (max_x - min_x) / 2) - 32
-        center_y = int(min_y + (max_y - min_y) / 2) + 224
+        min_y = min(ys) + 100
 
         if region_result['region_type'] != 'patch':
             severity = region_result['severity']
@@ -63,10 +68,10 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             elif severity == 'high':
                 severity_result = 'H'
             cv2.putText(seg_image, region_num + "_" + region_type.upper() + "(" + severity_result + ")",
-                        (min_x, min_y), cv2.FONT_HERSHEY_DUPLEX, 3, text_color, 3)
+                        (min_x, min_y), cv2.FONT_HERSHEY_DUPLEX, 3, rect_color, 3)
         else:
             cv2.putText(seg_image, region_num + "_" + region_type.upper(), (min_x, min_y),
-                        cv2.FONT_HERSHEY_DUPLEX, 3, text_color, 3)
+                        cv2.FONT_HERSHEY_DUPLEX, 3, rect_color, 3)
     cv2_im = cv2.cvtColor(seg_image, cv2.COLOR_BGR2RGB)
     pil_im = Image.fromarray(cv2_im)
 
