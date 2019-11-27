@@ -63,10 +63,10 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             elif severity == 'high':
                 severity_result = 'H'
             cv2.putText(seg_image, region_num + "_" + region_type.upper() + "(" + severity_result + ")",
-                        (center_x, center_y), cv2.FONT_HERSHEY_DUPLEX, 7, text_color, 7)
+                        (center_x, center_y), cv2.FONT_HERSHEY_DUPLEX, 3, text_color, 3)
         else:
             cv2.putText(seg_image, region_num + "_" + region_type.upper(), (center_x, center_y),
-                        cv2.FONT_HERSHEY_DUPLEX, 7, text_color, 7)
+                        cv2.FONT_HERSHEY_DUPLEX, 3, text_color, 3)
     cv2_im = cv2.cvtColor(seg_image, cv2.COLOR_BGR2RGB)
     pil_im = Image.fromarray(cv2_im)
 
