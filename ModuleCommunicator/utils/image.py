@@ -29,7 +29,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
     
     for region_result in region_results:
         region_num = str(region_result['region'])
-        region_type = region_result['region_type'][:3]
+        region_type = region_result['region_type']
         patches = region_result['region_area']
         ys = []
 
@@ -61,7 +61,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
 
             img = cv2.rectangle(seg_image, (x, y), (x + w, y + h), rect_color, 10)
 
-
+        region_type = region_type[:3]
         if region_result['region_type'] != 'patch':
             severity = region_result['severity']
             severity_result = ''
