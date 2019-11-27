@@ -40,7 +40,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
         elif region_type == "tc" :
             rect_color = [71,173,112]
         elif region_type == "patch":
-            rect_color = [0,255,0]
+            rect_color = [255,0,0]
         elif region_type == "pot" :
             rect_color = [240,176,0]
         
