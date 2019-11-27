@@ -29,7 +29,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
     
     for region_result in region_results:
         region_num = str(region_result['region'])
-        region_type = region_result['region_type']
+        region_type = region_result['region_type'][:3]
         patches = region_result['region_area']
         ys = []
 
@@ -72,10 +72,10 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             elif severity == 'high':
                 severity_result = 'H'
             cv2.putText(seg_image, region_type.upper() + "(" + severity_result + ")",
-                        (min_x, min_y), cv2.FONT_HERSHEY_DUPLEX, 3, rect_color, 3)
+                        (min_x, min_y), cv2.FONT_HERSHEY_DUPLEX, 2, rect_color, 2)
         else:
             cv2.putText(seg_image, region_type.upper(), (min_x, min_y),
-                        cv2.FONT_HERSHEY_DUPLEX, 3, rect_color, 3)
+                        cv2.FONT_HERSHEY_DUPLEX, 2, rect_color, 2)
     cv2_im = cv2.cvtColor(seg_image, cv2.COLOR_BGR2RGB)
     pil_im = Image.fromarray(cv2_im)
 
