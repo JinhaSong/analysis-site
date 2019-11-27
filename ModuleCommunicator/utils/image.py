@@ -45,17 +45,22 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             rect_color = [255,255,255]
         elif region_type == "pot" :
             rect_color = [240,176,0]
-
+        
+        min_x = 0
+        count = 0
         for patch in patches:
             x = patch['x']
             y = patch['y']
             w = patch['w']
             h = patch['h']
+            
+            if count == 0 :
+                min_x = x
             xs.append(x)
             ys.append(y)
             img = cv2.rectangle(seg_image, (x, y), (x + w, y + h), rect_color, 10)
+            count+=1
 
-        min_x = min(xs) + 256
         min_y = min(ys) + 100
 
         if region_result['region_type'] != 'patch':
