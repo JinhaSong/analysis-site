@@ -135,11 +135,11 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                     if region_result[i]['region'] == current_value:
                         is_json_region_not_exist = False
                         region_result[i]['region_area'].append({
-                                                                   'h': patch_size, 'w': patch_size,
-                                                                   'x': current_x * patch_size,
-                                                                   'y': current_y * patch_size,
-                                                                   'severity': severity
-                                                               } if (len(severity) > 0) else {
+                            'h': patch_size, 'w': patch_size,
+                            'x': current_x * patch_size,
+                            'y': current_y * patch_size,
+                            'severity': severity
+                        } if (len(severity) > 0) else {
                             'h': patch_size, 'w': patch_size,
                             'x': current_x * patch_size, 'y': current_y * patch_size,
                         })
@@ -147,14 +147,14 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                 # if region not exist, make region and append patch info
                 if is_json_region_not_exist:
                     region_result.append({
-                                             'region': current_value,
-                                             'region_type': CLASS_LIST[int(current_value / 100)],
-                                             'region_area': [{
-                                                 'h': patch_size, 'w': patch_size,
-                                                 'x': current_x * patch_size, 'y': current_y * patch_size,
-                                                 'severity': severity
-                                             }]
-                                         } if (len(severity) > 0) else {
+                        'region': current_value,
+                        'region_type': CLASS_LIST[int(current_value / 100)],
+                        'region_area': [{
+                            'h': patch_size, 'w': patch_size,
+                            'x': current_x * patch_size, 'y': current_y * patch_size,
+                            'severity': severity
+                        }]
+                        } if (len(severity) > 0) else {
                         'region': current_value,
                         'region_type': CLASS_LIST[int(current_value / 100)],
                         'region_area': [{
@@ -223,7 +223,9 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                 region_result[i]['maxy'] = max(maxy)
                 region_result[i]['minx'] = min(minx)
                 region_result[i]['miny'] = min(miny)
-                region_result[i]['area'] = (max(maxx) - min(minx)) * (max(maxy) - min(miny))
+                length, area = crack_length_area(region_type, crack_bbox)
+                region_result[i]['length'] = length
+                region_result[i]['area'] = area
                 region_result[i]['severity'] = crack_region_severity(max_of_total_max_width)
 
             # if is patch
@@ -462,3 +464,17 @@ def region_thresholding_process(region_result, region_threshold):
             j -= 1
         j += 1
     return region_result
+
+def crack_length_area(region_type, crack_bbox):
+    minx, miny, maxx, maxy = crack_bbox
+    if region_type == 'lc':
+        length = maxy-miny
+        area = 0
+    elif region_type == 'tc':
+        length = maxx - minx
+        area = 0
+    elif region_type == 'ac':
+        length = 0
+        area = (maxx-minx) * (maxy-miny)
+
+    return length, area
