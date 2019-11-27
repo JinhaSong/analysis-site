@@ -31,7 +31,6 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
         region_num = str(region_result['region'])
         region_type = region_result['region_type']
         patches = region_result['region_area']
-        ys = []
 
         rect_color = None
         if region_type == "ac" :
@@ -41,7 +40,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
         elif region_type == "tc" :
             rect_color = [71,173,112]
         elif region_type == "patch":
-            rect_color = [255,255,255]
+            rect_color = [0,255,0]
         elif region_type == "pot" :
             rect_color = [240,176,0]
         
@@ -55,7 +54,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             h = patch['h']
             
             if count == 0 :
-                min_x = x + 70
+                min_x = x + 50
                 min_y = y + 100
             count+=1
 
