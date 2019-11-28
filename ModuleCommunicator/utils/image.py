@@ -99,6 +99,7 @@ def attach_patch(region_results, severity_threshold, str_seg_image) :
     background_copy = background[:, :, ::-1].copy()
 
     result = None
+    pil_im = None
     for i in range(len(patches)):
         str_image = base64.b64decode(patches[i]['patching_seg_image'])
         image = Image.open(BytesIO(str_image)).convert('RGB')
