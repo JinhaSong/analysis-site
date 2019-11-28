@@ -98,8 +98,8 @@ def attach_patch(region_results, severity_threshold, str_seg_image) :
     background = numpy.array(image)
     background_copy = background[:, :, ::-1].copy()
 
-    result = None
     result_image = ''
+    pil_im = None
     for i in range(len(patches)):
         str_image = base64.b64decode(patches[i]['patching_seg_image'])
         image = Image.open(BytesIO(str_image)).convert('RGB')
@@ -115,7 +115,7 @@ def attach_patch(region_results, severity_threshold, str_seg_image) :
 
         result = image_blending(background_gray, patch_inverse, x, y).copy()
 
-    pil_im = Image.fromarray(result.copy())
+        pil_im = Image.fromarray(result.copy())
 
     buffered = BytesIO()
     pil_im.save(buffered, format="PNG")
