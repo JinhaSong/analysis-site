@@ -46,7 +46,7 @@ import cv2
 import numpy as np
 
 
-CLASS_LIST = ['normal', 'crack', 'patch', 'lane', 'detail_norm', 'ac', 'tc','lc']
+CLASS_LIST = ['normal', 'crack', 'patch', 'line', 'ac', 'tc','lc']
 CLASS_NUM = len(CLASS_LIST)
 
 OPTION_CONNECTIVITY_4 = 0
@@ -84,8 +84,8 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
             y = int(image_info['position']['y'] / image_info['position']['h'])
             label = image_info['label']
 
-            classification = {'normal': 0, 'crack': 0, 'patch': 0, 'lane': 0}
-            crack_classification = {'detail_norm': 0, 'ac': 0, 'tc': 0, 'lc': 0}
+            classification = {'normal': 0, 'crack': 0, 'patch': 0, 'line': 0}
+            crack_classification = {'ac': 0, 'tc': 0, 'lc': 0}
 
             for l in label:
                 if l['description'] in classification:
@@ -199,7 +199,6 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                     miny.append(region_area_info['severity']['miny'] + float(region_area_info['y']))
                     total_max_width.append(region_area_info['severity']['total_max_width'])
                     total_average_width.append(region_area_info['severity']['total_average_width'])
-
                 # if is patch
                 elif 'severity' not in region_area_info and region_type == 'patch':
                     is_patch = True
