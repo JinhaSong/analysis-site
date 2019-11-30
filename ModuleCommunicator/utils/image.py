@@ -21,7 +21,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
     display = numpy.asarray(input_img)
     display.flags.writeable = True
     display[display < severity_threshold] = 0
-    
+
     pil_image = Image.fromarray(display).convert('RGB')
 
     open_cv_image = numpy.array(pil_image)
@@ -100,7 +100,6 @@ def attach_patch(region_results, severity_threshold, str_seg_image) :
 
     background_gray = cv2.cvtColor(background_copy, cv2.COLOR_BGR2GRAY)
     result = background_gray.copy()
-    print(type(result), "\n")
     for i in range(len(patches)):
         str_image = base64.b64decode(patches[i]['patching_seg_image'])
         image = Image.open(BytesIO(str_image)).convert('RGB')
@@ -114,10 +113,6 @@ def attach_patch(region_results, severity_threshold, str_seg_image) :
         patch_inverse = cv2.cvtColor(patch_inverse, cv2.COLOR_BGR2GRAY)  # patch grayscale transform
 
         result = image_blending(background_gray, patch_inverse, x, y).copy()
-        print(type(result))
-    
-    print('')
-    print(type(result))
     pil_im = Image.fromarray(result.copy())
 
     buffered = BytesIO()
@@ -126,11 +121,39 @@ def attach_patch(region_results, severity_threshold, str_seg_image) :
     
     return result_image
 
+def attach_pot(str_seg_image, str_seg_pot_image) :
+    str_image = base64.b64decode(str_seg_image)
+    image = Image.open(BytesIO(str_image)).convert('RGB')
+    background = numpy.array(image)
+    background = background[:, :, ::-1].copy()
+
+    str_image = base64.b64decode(str_seg_pot_image)
+    image = Image.open(BytesIO(str_image)).convert('RGB')
+    patch = numpy.array(image)
+    patch = patch[:, :, ::-1].copy()
+
+    x = 0
+    y = 0
+
+    background = cv2.cvtColor(background, cv2.COLOR_BGR2GRAY)
+
+    patch_inverse = cv2.cvtColor(patch, cv2.COLOR_BGR2GRAY)  # patch grayscale transform
+    cv2.imwrite("test.png", patch_inverse)
+    result = image_blending(background, patch_inverse, x, y)
+
+    pil_im = Image.fromarray(result.copy())
+
+    buffered = BytesIO()
+    pil_im.save(buffered, format="PNG")
+    result_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
+
+    return result_image
 
 def image_blending(background, patch, x, y):
    _, mask_inv = cv2.threshold(patch, 10, 255, cv2.THRESH_BINARY_INV)
 
-   patch_height, patch_width = patch.shape
+   patch_height = patch.shape[0]
+   patch_width = patch.shape[1]
    roi = background[y: y + patch_height, x: x + patch_width]
 
    roi_patch = cv2.add(patch, roi, mask=mask_inv)

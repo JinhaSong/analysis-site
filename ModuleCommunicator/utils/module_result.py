@@ -30,3 +30,14 @@ def get_classification_detail(url, seg_image, cls_result_data) :
     cls_detail_result_data = json.loads((cls_detail_response.content).decode('utf-8'))
 
     return cls_detail_result_data
+
+
+def get_pot_segmentation(url, cls_result_data):
+    seg_data = dict()
+    seg_file = json.dumps(cls_result_data, ensure_ascii=False, indent='')
+    seg_files = {'file': seg_file}
+    seg_response = requests.post(url=url, data=seg_data, files=seg_files)
+    seg_result_data = json.loads((seg_response.content).decode('utf-8'))
+    seg_image = seg_result_data['result']
+
+    return seg_image

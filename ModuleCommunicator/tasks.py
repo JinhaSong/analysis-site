@@ -21,6 +21,7 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
     url_cls = 'http://mltwins.sogang.ac.kr:8001'
     url_seg = 'http://mltwins.sogang.ac.kr:8002'
     url_cls_detail = 'http://mltwins.sogang.ac.kr:8003'
+    url_seg_pot = 'http://mltwins.sogang.ac.kr:8004'
 
     start = time.time()
     cls_result_data = get_classification(url_cls, image_path)
@@ -36,6 +37,11 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
     cls_detail_result_data = get_classification_detail(url_cls_detail, seg_image, cls_result_data)
     end = time.time()
     print("====== classification detail fin {} ======".format(end-start))
+
+    start = time.time()
+    seg_image_pot = get_pot_segmentation(url_seg_pot, cls_result_data)
+    end = time.time()
+    print("====== pot segmentation fin {} ======".format(end - start))
 
     classification_result = cls_result_data
     cls_result_data = cls_result_data['results'][0]['module_result']
@@ -77,12 +83,17 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
     print("====== region fin {} ======".format(end - start))
 
     start = time.time()
-    seg_image_with_patch = attach_patch(region_results, severity_threshold, seg_image)
+    seg_full_image = attach_pot(seg_image, seg_image_pot)
+    end = time.time()
+    print("====== attach pothole image fin {} ======".format(end - start))
+
+    start = time.time()
+    seg_full_image = attach_patch(region_results, severity_threshold, seg_full_image)
     end = time.time()
     print("====== attach patch image fin {} ======".format(end - start))
 
     start = time.time()
-    result_image = make_result_image(region_results, severity_threshold, seg_image_with_patch)
+    result_image = make_result_image(region_results, severity_threshold, seg_full_image)
     end = time.time()
     print("====== create result image fin {} ======".format(end - start))
 
@@ -90,7 +101,7 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
 
     result = {}
     result['cls_result'] = cls_result_data
-    result['seg_image'] = convert_image_binary(seg_image_with_patch)
+    result['seg_image'] = convert_image_binary(seg_full_image)
     result['region_result'] = region_results
     result['result_image'] = convert_image_binary(result_image)
     return result
