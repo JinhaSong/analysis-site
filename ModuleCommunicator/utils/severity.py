@@ -291,8 +291,8 @@ def get_circle_x_y_color_list(A,xCenter, yCenter, radius):
         key = [['y_y_down','x_x_right'],['y_y_down', 'x_x_left'],['y_y_top','x_x_right'],
                     ['y_y_top', 'x_x_left'],['y_x_down', 'x_y_right'],['y_x_top', 'x_y_right'],
                     ['y_x_down', 'x_y_left'],['y_x_top', 'x_y_left']]
-        white = (255, 255, 255)
-        black = (0, 0, 0)
+
+        black = 0
         color = None
         for idx,y_x in enumerate(key):
             y_key=y_x[0]
@@ -402,7 +402,12 @@ def every_search_get_max_avg_width_of_crack(A):
     A_size = A.shape
     A_height = A_size[0]
     A_width = A_size[1]
-    index= np.nonzero(A>0)
+    # 커널 생성
+    kernel = np.ones((5, 5), np.uint8)
+    # para1 : 이미지, para2 : 커널, para3 : erode 반복 횟수
+    erode = cv2.erode(A, kernel, iterations=1)
+    index = np.nonzero(erode > 0)
+    
     index_y = index[0]
     index_x = index[1]
 
@@ -564,8 +569,12 @@ def crack_width_analysis(seg_image, threshold, cls_result_data, patch_size=256):
     full_img_dict = {}
     input_img = Image.open(BytesIO(image)).convert('L')
     display = np.asarray(input_img)
+    
     display.flags.writeable = True
     display[display<threshold] = 0
+    display[display>=threshold] = 1
+    display=display.astype(np.uint8)
+
     cv2.imwrite("test_" + str(threshold) + ".png", display)
 
     width, height = input_img.size
