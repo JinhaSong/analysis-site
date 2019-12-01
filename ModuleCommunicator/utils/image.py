@@ -182,3 +182,24 @@ def convert_image_binary(str_seg_image) :
     result_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
 
     return result_image
+
+def convert_image_thresholding(str_seg_image, threshold) :
+    image = base64.b64decode(str_seg_image)
+    input_img = Image.open(BytesIO(image)).convert('RGB')
+    display = numpy.asarray(input_img)
+    display.flags.writeable = True
+    display[display <= threshold] = 0
+    display[display > threshold] = 255
+    tmp = cv2.cvtColor(display, cv2.COLOR_BGR2GRAY)
+    _, alpha = cv2.threshold(tmp, 0, threshold, cv2.THRESH_BINARY)
+    b, g, r = cv2.split(display)
+    rgba = [b, g, r, alpha]
+    seg_img = cv2.merge(rgba, 4)
+
+    pil_im = Image.fromarray(seg_img)
+
+    buffered = BytesIO()
+    pil_im.save(buffered, format="PNG")
+    result_image = base64.b64encode(buffered.getvalue()).decode('utf-8')
+
+    return result_image

@@ -26,7 +26,7 @@ class ImageModel(models.Model):
     region_threshold = models.IntegerField(default=0)
     region_connectivity = models.IntegerField(default=0)
     region_noise_filter = models.IntegerField(default=0)
-    severity_threshold = models.IntegerField(default=235)
+    severity_threshold = models.IntegerField(default=239)
 
 
     def save(self, *args, **kwargs):
@@ -74,6 +74,7 @@ class ResultModel(models.Model):
     cls_result = JSONField(null=True)
     region_result = JSONField(null=True)
     seg_image = models.TextField()
+    seg_image_th = models.TextField()
     result_image = models.TextField()
 
 
@@ -122,12 +123,14 @@ class ResultModel(models.Model):
                 self.cls_result = task['cls_result']
                 self.region_result = task['region_result']
                 self.seg_image = task['seg_image']
+                self.seg_image_th = task['seg_image_th']
                 self.result_image = task['result_image']
             else:
                 task = self.task.get()
                 self.cls_result = task['cls_result']
                 self.region_result = task['region_result']
                 self.seg_image = task['seg_image']
+                self.seg_image_th = task['seg_image_th']
                 self.result_image = task['result_image']
         except:
             raise exceptions.ValidationError("Module Get Error. Please contact the administrator")

@@ -30,6 +30,7 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
 
     start = time.time()
     seg_image = get_segmentation(url_seg, cls_result_data)
+    seg_image_th = convert_image_thresholding(seg_image, severity_threshold)
     end = time.time()
     print("====== segmentation fin {} ======".format(end-start))
 
@@ -84,16 +85,18 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
 
     start = time.time()
     seg_full_image = attach_pot(seg_image, seg_image_pot)
+    seg_full_image_th = attach_pot(seg_image_th, seg_image_pot)
     end = time.time()
     print("====== attach pothole image fin {} ======".format(end - start))
 
     start = time.time()
     seg_full_image = attach_patch(region_results, severity_threshold, seg_full_image)
+    seg_full_image_th = attach_patch(region_results, severity_threshold, seg_full_image_th)
     end = time.time()
     print("====== attach patch image fin {} ======".format(end - start))
 
     start = time.time()
-    result_image = make_result_image(region_results, severity_threshold, seg_full_image)
+    result_image = make_result_image(region_results, severity_threshold, seg_full_image_th)
     end = time.time()
     print("====== create result image fin {} ======".format(end - start))
 
@@ -102,6 +105,7 @@ def communicator(url, image_path, image_width, image_height, patch_size, region_
     result = {}
     result['cls_result'] = cls_result_data
     result['seg_image'] = convert_image_binary(seg_full_image)
+    result['seg_image_th'] = convert_image_binary(seg_full_image_th)
     result['region_result'] = region_results
     result['result_image'] = convert_image_binary(result_image)
     return result

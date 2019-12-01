@@ -8,8 +8,8 @@ class ResultSerializer(serializers.HyperlinkedModelSerializer):
 
     class Meta:
         model = ResultModel
-        fields = ('cls_result', 'region_result', 'seg_image', 'result_image')
-        read_only_fields = ('cls_result', 'region_result', 'seg_image', 'result_image')
+        fields = ('cls_result', 'region_result', 'seg_image', 'seg_image_th', 'result_image')
+        read_only_fields = ('cls_result', 'region_result', 'seg_image', 'seg_image_th', 'result_image')
 
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
