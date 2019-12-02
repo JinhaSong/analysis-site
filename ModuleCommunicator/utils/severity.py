@@ -581,6 +581,7 @@ def crack_width_analysis(seg_image, threshold, cls_result_data, patch_size=256):
     patch_width = int(width / patch_size)
     patch_height = int(height / patch_size)
     patch_size = 256
+    proc_batch_size = multiprocessing.cpu_count()*2
 
     patches = []
     i_j = []
@@ -595,23 +596,29 @@ def crack_width_analysis(seg_image, threshold, cls_result_data, patch_size=256):
                 cls_position = cls_result_data[k]['position']
                 crack = cls_result_data[k]
                 labels = sorted(crack['label'], key=lambda label_list: (label_list['score']), reverse=True)
+
                 if labels[0]['description'] == 'crack' :
                     if cls_position['x'] == x and cls_position['y'] == y:
                         patch_img = display[patch_size * j:patch_size * (j + 1), patch_size * i:patch_size * (i + 1)]
                         patches.append(patch_img)
                         i_j.append([i, j])
-
+    print(multiprocessing.cpu_count())
     manager = multiprocessing.Manager()
     full_img_dict = manager.list()
     for i in range(0,len(patches)):
         full_img_dict.append(None)
 
-    for i in tqdm(range(0,len(patches)),desc="Calculating Severity(Multi-processing)"):
-            p = multiprocessing.Process(target=full_process, args=(patches[i],i,full_img_dict,patch_size,i_j[i]))
+    for i in tqdm(range(0,len(patches),proc_batch_size),desc="Calculating Severity(Multi-processing)"):
+        end = i+proc_batch_size
+        if end>=len(patches):
+            end = len(patches)
+        for idx in range(i,end):
+            p = multiprocessing.Process(target=full_process, args=(patches[idx],idx,full_img_dict,patch_size,i_j[idx]))
             jobs.append(p)
             p.start()
+        for proc in jobs:
+            proc.join()
+        print('{} - {} process join'.format(i, end))
 
-    for proc in jobs:
-        proc.join()
 
     return full_img_dict
