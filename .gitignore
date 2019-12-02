@@ -113,3 +113,5 @@ celerybeat-schedule
 # mypy
 .mypy_cache/
 
+# ignore backup file
+.back
