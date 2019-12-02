@@ -17,11 +17,12 @@ import glob
 import os
 
 @app.task
-def communicator(url, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
-    url_cls = 'http://mltwins.sogang.ac.kr:8001'
-    url_seg = 'http://mltwins.sogang.ac.kr:8002'
-    url_cls_detail = 'http://mltwins.sogang.ac.kr:8003'
-    url_seg_pot = 'http://mltwins.sogang.ac.kr:8004'
+def communicator(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
+    urls = urls.split(',')
+    url_cls = urls[0]
+    url_seg = urls[1]
+    url_cls_detail = urls[2]
+    url_seg_pot = urls[3]
 
     start = time.time()
     cls_result_data = get_classification(url_cls, image_path)

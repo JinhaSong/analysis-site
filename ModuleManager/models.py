@@ -10,7 +10,7 @@ import requests
 
 class ModuleElementModel(models.Model):
     name = models.TextField(unique=True)
-    url = models.URLField()
+    url = models.TextField(unique=True)
     content = models.TextField(blank=True)
     status = models.BooleanField(default=True)
 
@@ -22,11 +22,6 @@ class ModuleElementModel(models.Model):
 
     def save(self, *args, **kwargs):
         super(ModuleElementModel, self).save(*args, **kwargs)
-        try:
-            response = requests.get(self.url)
-            self.status = response.ok
-        except:
-            raise exceptions.ValidationError('Cannot access URL. Check module URL.')
 
         self.group.update_or_create(name=self.name, content=self.content)
         super(ModuleElementModel, self).save()
