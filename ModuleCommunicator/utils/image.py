@@ -60,7 +60,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             img = cv2.rectangle(seg_image, (x, y), (x + w, y + h), rect_color, 10)
 
         region_type = region_type[:3]
-        if region_result['region_type'] != 'patch':
+        if (region_result['region_type'] != 'patch') and region_result['region_type'] != 'pothole':
             severity = region_result['severity']
             severity_result = ''
             if severity == 'low':

@@ -115,3 +115,5 @@ celerybeat-schedule
 
 # ignore backup file
 .back
+# ignore server setting file
+.json

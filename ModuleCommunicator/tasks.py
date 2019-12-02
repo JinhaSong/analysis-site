@@ -80,7 +80,7 @@ def communicator(urls, image_path, image_width, image_height, patch_size, region
     print("====== json data parse fin {} ======".format(end - start))
 
     start = time.time()
-    region_results = make_region(image_path, classification_result, image_width, image_height, patch_size, region_thresold, connectivity_option=region_connectivity, noise_filtering_option=region_noise_filter)
+    region_results = make_region(image_path, seg_image_pot, classification_result, image_width, image_height, patch_size, region_thresold, connectivity_option=region_connectivity, noise_filtering_option=region_noise_filter)
     end = time.time()
     print("====== region fin {} ======".format(end - start))
 

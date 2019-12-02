@@ -44,9 +44,11 @@ import requests
 from io import BytesIO
 import cv2
 import numpy as np
+from PIL import Image
+import io
+import time
 
-
-CLASS_LIST = ['normal', 'crack', 'patch', 'line', 'ac', 'tc','lc']
+CLASS_LIST = ['normal', 'crack', 'patch', 'line', 'pothole', 'ac', 'tc','lc']
 CLASS_NUM = len(CLASS_LIST)
 
 OPTION_CONNECTIVITY_4 = 0
@@ -58,11 +60,15 @@ OPTION_NOISE_FILTER_CUT_EDGE = 2
 OPTION_NOISE_FILTER_CUT_EDGE_AND_FILL_IN_THE_BLANK = 3
 CHECK_POSITION_LIST = [-1, 0 ,1]
 
-def make_region(image_path, cls_result_data, image_width=3704, image_height=10000, patch_size=256, region_threshold=0, connectivity_option=1, noise_filtering_option=3):
+def make_region(image_path, seg_image_pot, cls_result_data, image_width=3704, image_height=10000, patch_size=256, region_threshold=0, connectivity_option=1, noise_filtering_option=3):
+    # print(cls_result_data)
     results = cls_result_data['results']
 
     input_image = Image.open(image_path)
 
+    seg_image_pot = base64.b64decode(str(seg_image_pot))
+    seg_image_pot = Image.open(io.BytesIO(seg_image_pot)).convert('L')
+    
     # patch_size = 256
     # image_width = 3704
     # image_height = 10000
@@ -73,7 +79,6 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
 
     for result in results:
         image_infos = result['module_result']
-
         axis_x = int(image_width / patch_size)
         axis_y = int(image_height / patch_size)
         crack_map = [[0 for x in range(axis_x)] for y in range(axis_y)]
@@ -84,7 +89,7 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
             y = int(image_info['position']['y'] / image_info['position']['h'])
             label = image_info['label']
 
-            classification = {'normal': 0, 'crack': 0, 'patch': 0, 'line': 0}
+            classification = {'normal':0, 'crack':0,'patch':0, 'line':0, 'pothole':0}
             crack_classification = {'ac': 0, 'tc': 0, 'lc': 0}
 
             for l in label:
@@ -102,7 +107,7 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
             crack_classification_max = max(crack_classification.keys(), key=(lambda k: crack_classification[k]))
 
             # Make 2D crack map
-            if classification_max == 'patch':
+            if (classification_max == 'patch') or (classification_max == 'pothole'):
                 crack_map[y][x] = CLASS_LIST.index(classification_max)
             elif classification_max == 'crack':
                 crack_map[y][x] = CLASS_LIST.index(crack_classification_max)
@@ -135,11 +140,11 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                     if region_result[i]['region'] == current_value:
                         is_json_region_not_exist = False
                         region_result[i]['region_area'].append({
-                                                                   'h': patch_size, 'w': patch_size,
-                                                                   'x': current_x * patch_size,
-                                                                   'y': current_y * patch_size,
-                                                                   'severity': severity
-                                                               } if (len(severity) > 0) else {
+                            'h': patch_size, 'w': patch_size,
+                            'x': current_x * patch_size,
+                            'y': current_y * patch_size,
+                            'severity': severity
+                        } if (len(severity) > 0) else {
                             'h': patch_size, 'w': patch_size,
                             'x': current_x * patch_size, 'y': current_y * patch_size,
                         })
@@ -147,17 +152,17 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                 # if region not exist, make region and append patch info
                 if is_json_region_not_exist:
                     region_result.append({
-                                             'region': current_value,
-                                             'region_type': CLASS_LIST[int(current_value / 100)],
-                                             'region_area': [{
-                                                 'h': patch_size, 'w': patch_size,
-                                                 'x': current_x * patch_size, 'y': current_y * patch_size,
-                                                 'severity': severity
-                                             }]
-                                         } if (len(severity) > 0) else {
-                        'region': current_value,
-                        'region_type': CLASS_LIST[int(current_value / 100)],
-                        'region_area': [{
+                            'region': current_value,
+                            'region_type': CLASS_LIST[int(current_value / 100)],
+                            'region_area': [{
+                            'h': patch_size, 'w': patch_size,
+                            'x': current_x * patch_size, 'y': current_y * patch_size,
+                            'severity': severity
+                            }]
+                        } if (len(severity) > 0) else {
+                            'region': current_value,
+                            'region_type': CLASS_LIST[int(current_value / 100)],
+                            'region_area': [{
                             'h': patch_size, 'w': patch_size,
                             'x': current_x * patch_size, 'y': current_y * patch_size,
                         }]})
@@ -183,7 +188,7 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
             # if len(region_area_infos) < region_threshold :
             # del region_result[i]
             is_crack = False
-            is_patch = False
+            is_potpat = False
 
             for region_area_info in region_area_infos:
                 # if is crack
@@ -200,8 +205,8 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                     total_max_width.append(region_area_info['severity']['total_max_width'])
                     total_average_width.append(region_area_info['severity']['total_average_width'])
                 # if is patch
-                elif 'severity' not in region_area_info and region_type == 'patch':
-                    is_patch = True
+                elif 'severity' not in region_area_info and (region_type == 'patch' or region_type == 'pothole'):
+                    is_potpat = True
                     minx.append(region_area_info['x'])
                     maxx.append(region_area_info['x'] + region_area_info['w'])
                     miny.append(region_area_info['y'])
@@ -216,38 +221,49 @@ def make_region(image_path, cls_result_data, image_width=3704, image_height=1000
                 region_result[i]['total_max_width'] = max_of_total_max_width
                 region_result[i]['max_width_x'] = max_width_x[total_max_width.index(max_of_total_max_width)]
                 region_result[i]['max_width_y'] = max_width_y[total_max_width.index(max_of_total_max_width)]
+                crack_bbox = min(minx), min(miny), max(maxx), max(maxy)
 
                 region_result[i]['total_average_width'] = sum(total_average_width) / len(total_average_width)
-                region_result[i]['maxx'] = max(maxx)
-                region_result[i]['maxy'] = max(maxy)
-                region_result[i]['minx'] = min(minx)
-                region_result[i]['miny'] = min(miny)
-                region_result[i]['area'] = (max(maxx) - min(minx)) * (max(maxy) - min(miny))
+                region_result[i]['maxx'] = crack_bbox[2]
+                region_result[i]['maxy'] = crack_bbox[3]
+                region_result[i]['minx'] = crack_bbox[0]
+                region_result[i]['miny'] = crack_bbox[1]
+                length, area = crack_length_area(region_type, crack_bbox)
+                region_result[i]['length'] = length
+                region_result[i]['area'] = area #(max(maxx) - min(minx)) * (max(maxy) - min(miny))
                 region_result[i]['severity'] = crack_region_severity(max_of_total_max_width)
 
             # if is patch
-            elif is_patch:
-                patching_region = [min(minx), min(miny), max(maxx), max(maxy)]
-                area, bbox, contour, patching_seg_image = patching_region_severity(input_image, patching_region,
-                                                                                    patch_size)
-                # print((contour))
-                patching_bbox_minx, patching_bbox_miny, patching_bbox_maxx, patching_bbox_maxy = bbox
-                region_result[i]['area'] = area
-                region_result[i]['patching_region_minx'] = int(patching_region[0])
-                region_result[i]['patching_region_miny'] = int(patching_region[1])
-                region_result[i]['patching_region_maxx'] = int(patching_region[2])
-                region_result[i]['patching_region_maxy'] = int(patching_region[3])
+            elif is_potpat:
+                distress_region = [min(minx), min(miny), max(maxx), max(maxy)]
+                area = 0
+                bbox = [0,0,0,0]
+                contour = []
+                if region_type == 'patch':
+                    region_type = 'patching'
+                    area, bbox, contour, distress_seg_image = patching_region_severity(input_image, distress_region, patch_size)
+                    region_result[i][region_type + '_seg_image'] = str(distress_seg_image)
 
-                region_result[i]['patching_bbox_minx'] = int(patching_bbox_minx + patching_region[0])
-                region_result[i]['patching_bbox_miny'] = int(patching_bbox_miny + patching_region[1])
-                region_result[i]['patching_bbox_maxx'] = int(patching_bbox_maxx + patching_region[0])
-                region_result[i]['patching_bbox_maxy'] = int(patching_bbox_maxy + patching_region[1])
+                elif region_type == 'pothole':
+                    area, bbox, contour = pothole_region_severity(seg_image_pot, distress_region, patch_size)
+                
+                distress_bbox_minx, distress_bbox_miny, distress_bbox_maxx, distress_bbox_maxy = bbox 
+                region_result[i]['area'] = area
+                region_result[i][region_type + '_region_minx'] = int(distress_region[0])
+                region_result[i][region_type + '_region_miny'] = int(distress_region[1])
+                region_result[i][region_type + '_region_maxx'] = int(distress_region[2])
+                region_result[i][region_type + '_region_maxy'] = int(distress_region[3])
+
+                region_result[i][region_type + '_bbox_minx'] = int(distress_bbox_minx + distress_region[0])
+                region_result[i][region_type + '_bbox_miny'] = int(distress_bbox_miny + distress_region[1])
+                region_result[i][region_type + '_bbox_maxx'] = int(distress_bbox_maxx + distress_region[0])
+                region_result[i][region_type + '_bbox_maxy'] = int(distress_bbox_maxy + distress_region[1])
                 # for c in contour:
                 #     c[0] = patching_region[0] + c[0]
                 #     c[1] = patching_region[1] + c[1]
                 # region_result[i]['contours'] = contour
                 # print(contour)
-                region_result[i]['patching_seg_image'] = str(patching_seg_image)
+                # region_result[i]['patching_seg_image'] = str(patching_seg_image)
 
         return region_result
 
@@ -456,13 +472,85 @@ def patching_region_severity(input_image, patching_region, patch_size):
 
     return area, bbox, contour, seg_image
 
+def pothole_region_severity(input_image, distress_region, patch_size):
+    crop_bbox = (distress_region[0], distress_region[1], distress_region[2],distress_region[3])
+    # print(input_image.shape)
+    # input_image = cv2.cvtColor(np.array(input_image), cv2.COLOR_BGR2RGB)
+    cropped_image = input_image.crop(crop_bbox)
+    # img = Image.open(input_image)
+
+    np_image = np.array(cropped_image)
+    print(np_image.shape)
+    area = 0
+    bbox = [0,0,0,0]
+    contours = [[[0,1], [0,1]]]
+    contour = []
+    if len(np_image) > 0 and len(np_image.shape) < 3:
+        dest_height, dest_width, = np_image.shape
+        ret, threshed_img = cv2.threshold(np_image, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        gaussion_filter_size = 9
+        max_iter = 20
+        for i in range(0,max_iter):
+            threshed_img = cv2.GaussianBlur(threshed_img,(gaussion_filter_size,gaussion_filter_size),0)
+            ret3, threshed_img = cv2.threshold(threshed_img, 0, 255, cv2.THRESH_BINARY+cv2.THRESH_OTSU)
+        threshed_img_boder= cv2.copyMakeBorder(threshed_img,2,2,2,2,cv2.BORDER_CONSTANT,value=[0,0,0])
+        height, width = threshed_img.shape
+        threshed_img_boder_reshape = cv2.resize(threshed_img_boder, None, fx=dest_width/width, fy=dest_height/height, interpolation=cv2.INTER_AREA)
+
+        contours, hier = cv2.findContours(threshed_img_boder_reshape, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        len_of_contours = []
+        x = []
+        y = []
+        for c in contours:
+            len_of_contours.append(len(c))
+        if len(contours) > 0:
+            contour = [contours[len_of_contours.index(max(len_of_contours))]]
+            for c in contour[0]:
+                # print(len(c))
+                x.append(c[0][0])
+                y.append(c[0][1])
+            segmentation = threshed_img
+            bbox = min(x), min(y), max(x), max(y) 
+            # contour_width = bbox[2] - bbox[0]
+            # contour_height = bbox[3] - bbox[1]
+            area = cv2.contourArea(contour[0])
+            np_image = cv2.cvtColor(np_image,cv2.COLOR_GRAY2RGB)
+
+            # cv2.drawContours(np_image, contour, -1, (0, 0, 255), 2)
+            # cv2.imwrite(str(time.time()) + str(np_image.shape)+'test.jpg', np_image)
+
+
+        else : 
+                print("Patching segmentation error : contours not exist!!")
+
+    elif len(np_image.shape) == 3 :
+        print("Patching image cropping error : input gray image")
+    else :
+        print('Patching image cropping error : cropped_image not exist!!')
+    
+    return area, bbox, contour 
 
 def region_thresholding_process(region_result, region_threshold):
     j = 0
     while (j < len(region_result)):
         # print('j', j)
-        if len(region_result[j]['region_area']) < region_threshold:
+        if (len(region_result[j]['region_area']) < region_threshold) and (region_result[j]['region_type'] is not 'pothole'):
             del region_result[j]
             j -= 1
         j += 1
     return region_result
+
+
+def crack_length_area(region_type, crack_bbox):
+    minx, miny, maxx, maxy = crack_bbox
+    if region_type == 'lc':
+        length = maxy-miny
+        area = 0
+    elif region_type == 'tc':
+        length = maxx - minx
+        area = 0
+    elif region_type == 'ac':
+        length = 0
+        area = (maxx-minx) * (maxy-miny)
+
+    return length, area
