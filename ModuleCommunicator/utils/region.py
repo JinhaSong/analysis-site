@@ -169,11 +169,12 @@ def make_region(image_path, seg_image_pot, cls_result_data, image_width=3704, im
 
         # region thresholding process
 
-        region_result = region_thresholding_process(region_result, region_threshold)
+        region_result = region_thresholding(region_result, region_threshold)
 
-        # region number sorting and severity processing
+
+        # severity processing
         for i in range(0, len(region_result)):
-            region_result[i]['region'] = i
+            # region_result[i]['region'] = i
             region_type = region_result[i]['region_type']
             max_width_x = []
             max_width_y = []
@@ -264,6 +265,20 @@ def make_region(image_path, seg_image_pot, cls_result_data, image_width=3704, im
                 # region_result[i]['contours'] = contour
                 # print(contour)
                 # region_result[i]['patching_seg_image'] = str(patching_seg_image)
+        
+        # for i in range(0, len(region_result)):
+        #     if region_result[i]['region_type'] == 'pothole':
+        #         print(region_result[i])
+        region_result = pothole_thresholding(region_result, 15)
+        # print('after processed')
+
+        # region number sort
+        for i in range(0, len(region_result)):
+            region_result[i]['region'] = i
+        # for i in range(0, len(region_result)):
+        #     if region_result[i]['region_type'] == 'pothole':
+        #         print(region_result[i])
+
 
         return region_result
 
@@ -398,8 +413,8 @@ def crack_region_severity(max_of_total_max_width):
 
 
 def patching_region_severity(input_image, patching_region, patch_size):
-    area = (patching_region[0], patching_region[1], patching_region[2], patching_region[3])
-    cropped_image = input_image.crop(area)
+    crop_bbox = (patching_region[0], patching_region[1], patching_region[2], patching_region[3])
+    cropped_image = input_image.crop(crop_bbox)
     np_image = np.array(cropped_image)
     area = 0
     bbox = [0, 0, 0, 0]
@@ -464,7 +479,7 @@ def patching_region_severity(input_image, patching_region, patch_size):
             bbox = min(x), min(y), max(x), max(y)
             area = cv2.contourArea(contours[0])
         else:
-            print("Patching segmentation error : contours not exist!!")
+            print("Patching segmentation error : contours not exist!!", crop_bbox)
     elif len(np_image.shape) == 3:
         print("Patching image cropping error : input gray image")
     else:
@@ -480,7 +495,7 @@ def pothole_region_severity(input_image, distress_region, patch_size):
     # img = Image.open(input_image)
 
     np_image = np.array(cropped_image)
-    print(np_image.shape)
+    # print(np_image.shape)
     area = 0
     bbox = [0,0,0,0]
     contours = [[[0,1], [0,1]]]
@@ -521,24 +536,39 @@ def pothole_region_severity(input_image, distress_region, patch_size):
 
 
         else : 
-                print("Patching segmentation error : contours not exist!!")
+            print("Pothole severity error : contours not exist!!", crop_bbox)
+
 
     elif len(np_image.shape) == 3 :
-        print("Patching image cropping error : input gray image")
+        print("Pothole image cropping error : input gray image")
     else :
-        print('Patching image cropping error : cropped_image not exist!!')
-    
+        print('Pothole image cropping error : cropped_image not exist!!')
+    cv2.imwrite(str(time.time()) + str(np_image.shape)+'test.jpg', np_image)
     return area, bbox, contour 
 
-def region_thresholding_process(region_result, region_threshold):
+def region_thresholding(region_result, region_threshold):
     j = 0
     while (j < len(region_result)):
         # print('j', j)
-        if (len(region_result[j]['region_area']) < region_threshold) and (region_result[j]['region_type'] is not 'pothole'):
+        if (len(region_result[j]['region_area']) < region_threshold) and (region_result[j]['region_type'] != 'pothole'):
             del region_result[j]
             j -= 1
         j += 1
     return region_result
+
+def pothole_thresholding(region_result, pothole_threshold=15):
+    j = 0
+    while (j < len(region_result)):
+        region_type = region_result[j]['region_type']
+        if(region_type=='pothole'):
+            width = region_result[j][region_type + '_bbox_maxx'] - region_result[j][region_type + '_bbox_minx']
+            height = region_result[j][region_type + '_bbox_maxy'] - region_result[j][region_type + '_bbox_miny']
+            if width < 15 and height < 15:
+                del region_result[j]
+                j -= 1
+        j += 1
+    return region_result
+
 
 
 def crack_length_area(region_type, crack_bbox):
