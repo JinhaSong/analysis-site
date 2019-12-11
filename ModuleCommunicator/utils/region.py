@@ -269,7 +269,7 @@ def make_region(image_path, seg_image_pot, cls_result_data, image_width=3704, im
         # for i in range(0, len(region_result)):
         #     if region_result[i]['region_type'] == 'pothole':
         #         print(region_result[i])
-        region_result = pothole_thresholding(region_result, 150)
+        region_result = pothole_patching_thresholding(region_result, 150, 4)
         # print('after processed')
 
         # region number sort
@@ -556,7 +556,7 @@ def region_thresholding(region_result, region_threshold):
         j += 1
     return region_result
 
-def pothole_thresholding(region_result, pothole_threshold=150):
+def pothole_patching_thresholding(region_result, pothole_threshold, patching_region_threshold):
     j = 0
     while (j < len(region_result)):
         region_type = region_result[j]['region_type']
@@ -566,6 +566,11 @@ def pothole_thresholding(region_result, pothole_threshold=150):
             if width < pothole_threshold and height < pothole_threshold:
                 del region_result[j]
                 j -= 1
+        elif(region_type=='patch'):
+            if len(region_result[j]['region_area']) < patching_region_threshold:
+                del region_result[j]
+                j -= 1
+
         j += 1
     return region_result
 
