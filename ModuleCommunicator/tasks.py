@@ -20,15 +20,13 @@ import os
 def communicator(module_name, urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
     result = None
     if module_name == 'crackviewer' :
-        result = communicator_crackview(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold)
-    elif module_name == 'path' :
-        result = communicator_path(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold)
-    elif module_name == 'bin':
-        result = communicator_bin(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold)
+        result = analysis_crackviewer(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold)
+    elif module_name == 'path' or  module_name == 'bin':
+        result = analysis_path_bin(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold)
     return result
 
 
-def communicator_crackview(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
+def analysis_crackviewer(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
     urls = urls.split(',')
     url_cls = urls[0]
     url_seg = urls[1]
@@ -112,8 +110,6 @@ def communicator_crackview(urls, image_path, image_width, image_height, patch_si
     end = time.time()
     print("====== create result image fin {} ======".format(end - start))
 
-
-
     result = {}
     result['cls_result'] = cls_result_data
     result['seg_image'] = convert_image_binary(seg_full_image)
@@ -122,8 +118,83 @@ def communicator_crackview(urls, image_path, image_width, image_height, patch_si
     result['result_image'] = convert_image_binary(result_image)
     return result
 
-def communicator_path(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
-    return None
+def analysis_path_bin(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
+    urls = urls.split(',')
+    url_cls = urls[0]
+    url_seg = urls[1]
+    url_cls_detail = urls[2]
+    url_seg_pot = urls[3]
 
-def communicator_bin(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
-    return None
+    start = time.time()
+    cls_result_data = get_classification(url_cls, image_path)
+    end = time.time()
+    print("====== classification fin {} ======".format(end-start))
+
+    start = time.time()
+    seg_image = get_segmentation(url_seg, cls_result_data)
+    seg_image_th = convert_image_thresholding(seg_image, severity_threshold)
+    end = time.time()
+    print("====== segmentation fin {} ======".format(end-start))
+
+    start = time.time()
+    cls_detail_result_data = get_classification_detail(url_cls_detail, seg_image, cls_result_data)
+    end = time.time()
+    print("====== classification detail fin {} ======".format(end-start))
+
+    start = time.time()
+    seg_image_pot = get_pot_segmentation(url_seg_pot, cls_result_data)
+    end = time.time()
+    print("====== pot segmentation fin {} ======".format(end - start))
+
+    classification_result = cls_result_data
+    cls_result_data = cls_result_data['results'][0]['module_result']
+
+    start = time.time()
+    severity_result = crack_width_analysis(seg_image, severity_threshold, cls_result_data, patch_size=256)
+    end = time.time()
+    print("====== severity fin {} ======".format(end - start))
+
+    start = time.time()
+    for i in range(len(cls_result_data)) :
+        cls_position = cls_result_data[i]['position']
+        cls_detail_result = cls_detail_result_data['results'][0]['module_result']
+        for j in range(len(cls_detail_result)) :
+            cls_detail_position = cls_detail_result[j]['position']
+            if cls_position['x'] == cls_detail_position['x'] and cls_position['y'] == cls_detail_position['y'] :
+                cls_result_data[i]['label'].extend(cls_detail_result[j]['label'])
+                j = len(cls_detail_result)
+
+    for i in range(len(cls_result_data)) :
+        cls_position = cls_result_data[i]['position']
+        for j in range(len(severity_result)) :
+            if cls_position['x'] == severity_result[j]['x'] and cls_position['y'] == severity_result[j]['y'] :
+                cls_result_data[i]['severity'] = {}
+                cls_result_data[i]['severity']['total_max_width'] = severity_result[j]['total_max_width']
+                cls_result_data[i]['severity']['total_average_width'] = severity_result[j]['total_average_width']
+                cls_result_data[i]['severity']['minx'] = float(severity_result[j]['minx'])
+                cls_result_data[i]['severity']['miny'] = float(severity_result[j]['miny'])
+                cls_result_data[i]['severity']['maxx'] = float(severity_result[j]['maxx'])
+                cls_result_data[i]['severity']['maxy'] = float(severity_result[j]['maxy'])
+                cls_result_data[i]['severity']['max_width_x'] = float(severity_result[j]['max_width_x'])
+                cls_result_data[i]['severity']['max_width_y'] = float(severity_result[j]['max_width_y'])
+    end = time.time()
+    print("====== json data parse fin {} ======".format(end - start))
+
+    start = time.time()
+    region_results = make_region(image_path, seg_image_pot, classification_result, image_width, image_height,
+                                 patch_size, region_thresold, connectivity_option=region_connectivity,
+                                 noise_filtering_option=region_noise_filter)
+    end = time.time()
+    print("====== region fin {} ======".format(end - start))
+
+    start = time.time()
+    seg_full_image_th = attach_pot(seg_image_th, seg_image_pot)
+    seg_full_image_th = attach_patch(region_results, severity_threshold, seg_full_image_th)
+    result_image = make_result_image(region_results, severity_threshold, seg_full_image_th)
+    end = time.time()
+    print("====== create result image fin {} ======".format(end - start))
+
+    result = {}
+    result['region_result'] = region_results
+    result['result_image'] = convert_image_binary(result_image)
+    return result

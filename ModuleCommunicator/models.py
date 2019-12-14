@@ -72,11 +72,11 @@ class ResultModel(models.Model):
     image = models.ForeignKey(ImageModel, related_name='results', on_delete=models.CASCADE)
     module = models.ForeignKey(ModuleElementModel)
     cls_result = JSONField(null=True)
-    region_result = JSONField(null=True)
     seg_image = models.TextField()
     seg_image_th = models.TextField()
-    result_image = models.TextField()
-
+    region_result = JSONField(null=True)
+    result_image_bin = models.TextField()
+    result_image_path = models.ImageField()
 
     def save(self, *args, **kwargs):
         super(ResultModel, self).save(*args, **kwargs)
@@ -122,18 +122,30 @@ class ResultModel(models.Model):
         try:
             if DEBUG:
                 task = self.task
-                self.cls_result = task['cls_result']
-                self.region_result = task['region_result']
-                self.seg_image = task['seg_image']
-                self.seg_image_th = task['seg_image_th']
-                self.result_image = task['result_image']
             else:
                 task = self.task.get()
+
+            if self.module.name == 'crackviewer':
                 self.cls_result = task['cls_result']
                 self.region_result = task['region_result']
                 self.seg_image = task['seg_image']
                 self.seg_image_th = task['seg_image_th']
+                self.result_image_bin = task['result_image']
+            elif self.module.name == 'bin':
+                self.cls_result = ''
+                self.region_result = task['region_result']
+                self.seg_image = ''
+                self.seg_image_th = ''
+                self.result_image_bin = task['result_image']
+                ## save image
+            elif self.module.name == 'path':
+                self.cls_result = ''
+                self.region_result = task['region_result']
+                self.seg_image = ''
+                self.seg_image_th = ''
                 self.result_image = task['result_image']
+
+
         except:
             raise exceptions.ValidationError("Module Get Error. Please contact the administrator")
         super(ResultModel, self).save()
