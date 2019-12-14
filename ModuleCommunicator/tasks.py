@@ -17,7 +17,18 @@ import glob
 import os
 
 @app.task
-def communicator(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
+def communicator(module_name, urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
+    result = None
+    if module_name == 'crackview' :
+        result = communicator_crackview(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold)
+    elif module_name == 'path' :
+        result = communicator_path(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold)
+    elif module_name == 'bin':
+        result = communicator_bin(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold)
+    return result
+
+
+def communicator_crackview(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
     urls = urls.split(',')
     url_cls = urls[0]
     url_seg = urls[1]
@@ -111,5 +122,8 @@ def communicator(urls, image_path, image_width, image_height, patch_size, region
     result['result_image'] = convert_image_binary(result_image)
     return result
 
+def communicator_path(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
+    return None
 
-
+def communicator_bin(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
+    return None
