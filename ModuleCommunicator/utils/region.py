@@ -571,7 +571,7 @@ def distress_thresholding(region_result, pothole_threshold, patching_region_thre
                 del region_result[j]
                 j -= 1
         elif region_type == 'ac' or region_type == 'tc' or region_type == 'lc':
-            if region_result[j]['length'] == 0 or region_result[j]['area'] == 0:
+            if region_result[j]['length'] == 0 and region_result[j]['area'] == 0:
                 del region_result[j]
                 j -= 1
         j += 1
