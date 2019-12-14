@@ -10,7 +10,7 @@ import requests
 
 class ModuleElementModel(models.Model):
     name = models.TextField(unique=True)
-    url = models.TextField(unique=True)
+    url = models.TextField(unique=False)
     content = models.TextField(blank=True)
     status = models.BooleanField(default=True)
 
