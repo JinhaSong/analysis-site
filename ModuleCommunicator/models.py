@@ -90,6 +90,7 @@ class ResultModel(models.Model):
         # try:
         if DEBUG:
             self.task = communicator(
+                self.module.name,
                 self.module.url,
                 self.image.image.path,
                 image_size[1],
@@ -102,6 +103,7 @@ class ResultModel(models.Model):
             )
         else:
             self.task = communicator.delay(
+                self.module.name,
                 self.module.url,
                 self.image.image.path,
                 image_size[1],
