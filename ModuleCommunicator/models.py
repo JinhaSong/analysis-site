@@ -143,8 +143,8 @@ class ResultModel(models.Model):
                 self.region_result = task['region_result']
                 self.seg_image = ''
                 self.seg_image_th = ''
-                self.result_image = task['result_image']
-
+                result_image_path = os.path.join(str(self.image.image).split(".")[0] + "_result" + ".png")
+                self.result_image = ContentFile(base64.b64decode(task['result_image']), name=result_image_path)
 
         except:
             raise exceptions.ValidationError("Module Get Error. Please contact the administrator")
