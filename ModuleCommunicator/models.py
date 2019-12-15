@@ -5,13 +5,14 @@ from django.db import models
 
 # Create your models here.
 from django.contrib.postgres.fields import JSONField
+from django.core.files.base import ContentFile
 from rest_framework import exceptions
 from AnalysisSite.config import DEBUG
 from ModuleCommunicator.tasks import communicator
 from ModuleCommunicator.utils import filename
 from ModuleManager.models import *
 from cv2 import cv2
-import os
+import os, base64
 
 
 class ImageModel(models.Model):
@@ -75,7 +76,7 @@ class ResultModel(models.Model):
     seg_image = models.TextField()
     seg_image_th = models.TextField()
     region_result = JSONField(null=True)
-    result_image_bin = models.TextField()
+    result_image = models.TextField()
     result_image_path = models.ImageField()
 
     def save(self, *args, **kwargs):
@@ -119,35 +120,34 @@ class ResultModel(models.Model):
 
     # Celery Get
     def get_result(self):
-        try:
-            if DEBUG:
-                task = self.task
-            else:
-                task = self.task.get()
+        # try:
+        if DEBUG:
+            task = self.task
+        else:
+            task = self.task.get()
 
-            if self.module.name == 'crackviewer':
-                self.cls_result = task['cls_result']
-                self.region_result = task['region_result']
-                self.seg_image = task['seg_image']
-                self.seg_image_th = task['seg_image_th']
-                self.result_image_bin = task['result_image']
-            elif self.module.name == 'bin':
-                self.cls_result = ''
-                self.region_result = task['region_result']
-                self.seg_image = ''
-                self.seg_image_th = ''
-                self.result_image_bin = task['result_image']
-                ## save image
-            elif self.module.name == 'path':
-                self.cls_result = ''
-                self.region_result = task['region_result']
-                self.seg_image = ''
-                self.seg_image_th = ''
-                result_image_path = os.path.join(str(self.image.image).split(".")[0] + "_result" + ".png")
-                self.result_image = ContentFile(base64.b64decode(task['result_image']), name=result_image_path)
+        if self.module.name == 'crackviewer':
+            self.cls_result = task['cls_result']
+            self.region_result = task['region_result']
+            self.seg_image = task['seg_image']
+            self.seg_image_th = task['seg_image_th']
+            self.result_image = task['result_image']
+        elif self.module.name == 'bin':
+            self.cls_result = ''
+            self.region_result = task['region_result']
+            self.seg_image = ''
+            self.seg_image_th = ''
+            self.result_image = task['result_image']
+        elif self.module.name == 'path':
+            self.cls_result = ''
+            self.region_result = task['region_result']
+            self.seg_image = ''
+            self.seg_image_th = ''
+            result_path = os.path.join(str(self.image.image).split(".")[0] + "_result" + ".png")
+            self.result_image_path = ContentFile(base64.b64decode(task['result_image']), name=result_path)
 
-        except:
-            raise exceptions.ValidationError("Module Get Error. Please contact the administrator")
+        # except:
+        #     raise exceptions.ValidationError("Module Get Error. Please contact the administrator")
         super(ResultModel, self).save()
 
     def get_module_name(self):
