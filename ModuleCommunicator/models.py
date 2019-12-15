@@ -77,7 +77,7 @@ class ResultModel(models.Model):
     seg_image_th = models.TextField()
     region_result = JSONField(null=True)
     result_image_bin = models.TextField()
-    result_image_path = models.ImageField()
+    # result_image_path = models.ImageField()
 
     def save(self, *args, **kwargs):
         super(ResultModel, self).save(*args, **kwargs)
@@ -144,7 +144,7 @@ class ResultModel(models.Model):
             self.seg_image = ''
             self.seg_image_th = ''
             result_path = os.path.join(str(self.image.image).split(".")[0] + "_result" + ".png")
-            self.result_image_path = ContentFile(base64.b64decode(task['result_image']), name=result_path)
+            # self.result_image_path = ContentFile(base64.b64decode(task['result_image']), name=result_path)
 
         # except:
         #     raise exceptions.ValidationError("Module Get Error. Please contact the administrator")
