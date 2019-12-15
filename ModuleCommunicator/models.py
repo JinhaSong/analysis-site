@@ -76,7 +76,7 @@ class ResultModel(models.Model):
     seg_image = models.TextField()
     seg_image_th = models.TextField()
     region_result = JSONField(null=True)
-    result_image_bin = models.TextField()
+    result_image = models.TextField()
     result_image_path = models.ImageField()
 
     def save(self, *args, **kwargs):
@@ -131,13 +131,13 @@ class ResultModel(models.Model):
             self.region_result = task['region_result']
             self.seg_image = task['seg_image']
             self.seg_image_th = task['seg_image_th']
-            self.result_image_bin = task['result_image']
+            self.result_image = task['result_image']
         elif self.module.name == 'bin':
             self.cls_result = ''
             self.region_result = task['region_result']
             self.seg_image = ''
             self.seg_image_th = ''
-            self.result_image_bin = task['result_image']
+            self.result_image = task['result_image']
         elif self.module.name == 'path':
             self.cls_result = ''
             self.region_result = task['region_result']
