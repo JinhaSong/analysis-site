@@ -6,8 +6,8 @@ from ModuleCommunicator.models import *
 class ResultSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = ResultModel
-        fields = ('cls_result', 'region_result', 'seg_image', 'seg_image_th', 'result_image', 'result_image_path')
-        read_only_fields = ('cls_result', 'region_result', 'seg_image', 'seg_image_th', 'result_image', 'result_image_path')
+        fields = ('cls_result', 'region_result', 'seg_image', 'seg_image_th', 'result_image_bin', 'result_image_path')
+        read_only_fields = ('cls_result', 'region_result', 'seg_image', 'seg_image_th', 'result_image_bin', 'result_image_path')
 
 
 class ImageSerializer(serializers.HyperlinkedModelSerializer):
