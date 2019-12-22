@@ -40,7 +40,7 @@ def make_result_image(region_results, severity_threshold, str_seg_image) :
             rect_color = [71,173,112]
         elif region_type == "patch":
             rect_color = [255,0,0]
-        elif region_type == "pot" :
+        elif region_type == "pothole" :
             rect_color = [240,176,0]
         
         min_x = 0
