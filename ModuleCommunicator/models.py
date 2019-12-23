@@ -34,7 +34,6 @@ class ImageModel(models.Model):
         super(ImageModel, self).save(*args, **kwargs)
 
         module_set = self.get_module()
-        print("module_set", module_set)
         module_result = list()
 
         for module in module_set.all():
@@ -89,67 +88,66 @@ class ResultModel(models.Model):
     def set_task(self):
         self.task = None
         image_size = cv2.imread(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../media/' ,str(self.image.image))).shape
-        # try:
-        print("in set_task", self.module.name)
-        if DEBUG:
-            self.task = communicator(
-                self.module.name,
-                self.module.url,
-                self.image.image.path,
-                image_size[1],
-                image_size[0],
-                self.image.patch_size,
-                self.image.region_threshold,
-                self.image.region_connectivity,
-                self.image.region_noise_filter,
-                self.image.severity_threshold
-            )
-        else:
-            self.task = communicator.delay(
-                self.module.name,
-                self.module.url,
-                self.image.image.path,
-                image_size[1],
-                image_size[0],
-                self.image.patch_size,
-                self.image.region_threshold,
-                self.image.region_connectivity,
-                self.image.region_noise_filter,
-                self.image.severity_threshold
-            )
-        # except:
-        #     raise exceptions.ValidationError("Module Set Error. Please contact the administrator")
+        try:
+            if DEBUG:
+                self.task = communicator(
+                    self.module.name,
+                    self.module.url,
+                    self.image.image.path,
+                    image_size[1],
+                    image_size[0],
+                    self.image.patch_size,
+                    self.image.region_threshold,
+                    self.image.region_connectivity,
+                    self.image.region_noise_filter,
+                    self.image.severity_threshold
+                )
+            else:
+                self.task = communicator.delay(
+                    self.module.name,
+                    self.module.url,
+                    self.image.image.path,
+                    image_size[1],
+                    image_size[0],
+                    self.image.patch_size,
+                    self.image.region_threshold,
+                    self.image.region_connectivity,
+                    self.image.region_noise_filter,
+                    self.image.severity_threshold
+                )
+        except:
+            raise exceptions.ValidationError("Module Set Error. Please contact the administrator")
 
     # Celery Get
     def get_result(self):
-        # try:
-        if DEBUG:
-            task = self.task
-        else:
-            task = self.task.get()
-        print("in get_result",self.module.name)
-        if self.module.name == 'crackviewer':
-            self.cls_result = task['cls_result']
-            self.region_result = task['region_result']
-            self.seg_image = task['seg_image']
-            self.seg_image_th = task['seg_image_th']
-            self.result_image = task['result_image']
-        elif self.module.name == 'bin':
-            self.cls_result = ''
-            self.region_result = task['region_result']
-            self.seg_image = ''
-            self.seg_image_th = ''
-            self.result_image = task['result_image']
-        elif self.module.name == 'path':
-            self.cls_result = ''
-            self.region_result = task['region_result']
-            self.seg_image = ''
-            self.seg_image_th = ''
-            result_path = os.path.join(str(self.image.image).split(".")[0] + "_result" + ".png")
-            self.result_image_path = ContentFile(base64.b64decode(task['result_image']), name=result_path)
+        try:
+            if DEBUG:
+                task = self.task
+            else:
+                task = self.task.get()
 
-        # except:
-        #     raise exceptions.ValidationError("Module Get Error. Please contact the administrator")
+            if self.module.name == 'crackviewer':
+                self.cls_result = task['cls_result']
+                self.region_result = task['region_result']
+                self.seg_image = task['seg_image']
+                self.seg_image_th = task['seg_image_th']
+                self.result_image = task['result_image']
+            elif self.module.name == 'bin':
+                self.cls_result = ''
+                self.region_result = task['region_result']
+                self.seg_image = ''
+                self.seg_image_th = ''
+                self.result_image = task['result_image']
+            elif self.module.name == 'path':
+                self.cls_result = ''
+                self.region_result = task['region_result']
+                self.seg_image = ''
+                self.seg_image_th = ''
+                result_path = os.path.join(str(self.image.image).split(".")[0] + "_result" + ".png")
+                self.result_image_path = ContentFile(base64.b64decode(task['result_image']), name=result_path)
+
+        except:
+            raise exceptions.ValidationError("Module Get Error. Please contact the administrator")
         super(ResultModel, self).save()
 
     def get_module_name(self):
