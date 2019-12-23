@@ -34,6 +34,7 @@ class ImageModel(models.Model):
         super(ImageModel, self).save(*args, **kwargs)
 
         module_set = self.get_module()
+        print("module_set", module_set)
         module_result = list()
 
         for module in module_set.all():
