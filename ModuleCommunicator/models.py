@@ -35,6 +35,7 @@ class ImageModel(models.Model):
 
         module_set = self.get_module()
         module_result = list()
+        print("module_set", module_set)
 
         for module in module_set.all():
             module_result.append(self.results.create(module=module))
