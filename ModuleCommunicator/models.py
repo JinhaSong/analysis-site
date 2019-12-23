@@ -89,6 +89,7 @@ class ResultModel(models.Model):
         self.task = None
         image_size = cv2.imread(os.path.join(os.path.dirname(os.path.abspath(__file__)), '../media/' ,str(self.image.image))).shape
         # try:
+        print("in set_task", self.module.name)
         if DEBUG:
             self.task = communicator(
                 self.module.name,
@@ -125,7 +126,7 @@ class ResultModel(models.Model):
             task = self.task
         else:
             task = self.task.get()
-
+        print("in get_result",self.module.name)
         if self.module.name == 'crackviewer':
             self.cls_result = task['cls_result']
             self.region_result = task['region_result']
