@@ -19,6 +19,7 @@ import os
 @app.task
 def communicator(module_name, urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold):
     result = None
+    print("communicator", module_name)
     if module_name == 'crackviewer' :
         result = analysis_crackviewer(urls, image_path, image_width, image_height, patch_size, region_thresold, region_connectivity, region_noise_filter, severity_threshold)
     elif module_name == 'path' or  module_name == 'bin':
