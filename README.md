@@ -174,5 +174,5 @@ python manage.py createsuperuser
 
 ## Region 및 severity 분석
 
-해당 내용은 링크에서 설명한다.
+해당 내용은 [링크](https://github.com/JinhaSong/analysis-site/blob/crack/ModuleCommunicator/utils/Readme.md)에서 설명한다.
  
