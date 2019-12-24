@@ -171,4 +171,8 @@ python manage.py createsuperuser
 실행 이후 모듈을 등록하기 위해 관리자 페이지에 접속한다.
 
 만약 local에서 작업하였다면, http://localhost:8000/admin 으로 접속하여 만든 관리자 계정으로 로그인하여 Module 및 Group을 추가한다.
+
+## Region 및 severity 분석
+
+해당 내용은 링크에서 설명한다.
  
