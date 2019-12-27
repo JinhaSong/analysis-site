@@ -3,7 +3,7 @@
 * 각각의 분석함수는 아래 항목을 통해 설명한다.
 
 ## Region 분석
-* [링크](https://github.com/JinhaSong/analysis-site/edit/crack/ModuleCommunicator/utils/region_Readme.md)
+* [링크](https://github.com/JinhaSong/analysis-site/blob/crack/ModuleCommunicator/utils/region_Readme.md)
 
 ## Severity 분석
-* [링크](https://github.com/JinhaSong/analysis-site/edit/crack/ModuleCommunicator/utils/severity_Readme.md)
+* [링크](https://https://github.com/JinhaSong/analysis-site/blob/crack/ModuleCommunicator/utils/severity_Readme.md)
