@@ -6,4 +6,4 @@
 * [링크](https://github.com/JinhaSong/analysis-site/blob/crack/ModuleCommunicator/utils/region_Readme.md)
 
 ## Severity 분석
-* [링크](https://https://github.com/JinhaSong/analysis-site/blob/crack/ModuleCommunicator/utils/severity_Readme.md)
+* [링크](https://github.com/JinhaSong/analysis-site/blob/crack/ModuleCommunicator/utils/severity_Readme.md)
