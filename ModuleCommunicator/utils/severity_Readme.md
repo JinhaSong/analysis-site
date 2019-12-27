@@ -152,5 +152,6 @@ output : return_list[count] = {
             }
 
 **full_process 함수**
+
 severity.py에서 main이 되는 함수(분석결과를 dictionary로 반환)
 #
