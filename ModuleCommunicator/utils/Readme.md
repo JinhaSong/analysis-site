@@ -1,4 +1,4 @@
-# Region.py
+# region.py
 패치 단위로 분류된 결과를 영역으로 묶는 작업을 하는 코드
 - input : 패치별 분류결과
 - output : 영역별 분류결과
@@ -48,7 +48,11 @@ pothole영역의 넓이를 구하기 위한 함수
 파손 형태별 파손의 최소 요건을 만족하지 못하면 해당 region을 없애버리는 함수(ex: patching을 넓이 150mm이하..)
 - input : region_result, pothole_threshold, patching_region_threshold
 - output : region_result
-# crack_length_area 함수 
+## crack_length_area 함수 
 균열의 최대폭 혹은 넓이를 계산하는 함수
 - input : region_type, crack_bbox
 - output : length, area
+
+
+# severity.py
+균열의 심각도를 구하는 작업의 코드 
